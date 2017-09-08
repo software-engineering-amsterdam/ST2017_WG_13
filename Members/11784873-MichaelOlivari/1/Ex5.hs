@@ -17,14 +17,28 @@ forall :: [a] -> (a -> Bool) -> Bool
 forall = flip all
 
 --Q5
-walkBy:: Int->[a]->[[a]] --type which takes an int value specifying the amount of elements to take when walking through the list, in order to generate sublists with each step of the walk
-walkBy _ [] = [[]] --stop condition for the tail being an empty list
-walkBy n xs = (take n xs) : (walkBy n (tail xs)) --tail-recursion for walking through list, appending each sublist gathered by the walk to main list of subsequences
+-- type which takes an int value specifying the amount of elements to take when walking through the list, 
+-- in order to generate sublists with each step of the walk
+walkBy:: Int->[a]->[[a]] 
+walkBy _ [] = [[]]
 
- --filter on the walks which have a prime sum, taking the head which contains the smallest ints due to walking in the numerically ordered sequence of the initial list
+--tail-recursion for walking through list, appending each sublist gathered by the walk to main list of subsequences
+walkBy n xs = (take n xs) : (walkBy n (tail xs)) 
+
+-- filter on the walks which have a prime sum, taking the head which contains the smallest ints due to walking
+-- in the numerically ordered sequence of the initial list
 primeSumList = head (filter (prime . sum) (walkBy 101 primes))
 
 --returns smallest sum
 minPrimeSum = sum primeSumList
 
-{- This does not need to be tested because the correctness of this evaluation is solely dependent on the inbuilt functions of haskell -}
+{- 
+
+Question: Do you have to test that your answer is correct? 
+
+Answer:
+This does not need to be tested because the correctness of this evaluation is solely dependent on the inbuilt functions of haskell.
+
+Total Time Spent: ~1 hour
+
+-}
