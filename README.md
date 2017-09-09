@@ -1,7 +1,7 @@
 
 [![N|Solid](http://static.uva.nl/binaries/content/gallery/logos/p-z/uva_385_logo_websafergb_forwebsite_nl_462x46.jpg)]()
 # Software Testing - Team 13  
-## Lab work repository
+## Lab Group Members
 
 - **Leó Gunnar Vídisson** - 11858990 
 - **Michael Olivari** - 11784873 
