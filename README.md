@@ -10,32 +10,28 @@
 
 ## Overview of our Folder Structure ##
 
-```
-Team -> split down to weeks 1-8
-    1
-    .
-    .
-    8
-Members
-    11424907-ToineKhonraad -> split down to weeks 1-8
-        1
-        .
-        .
-        8
-    11721677-PaulSpencer -> split down to weeks 1-8
-        1
-        .
-        .
-        8
-    11784873-MichaelOlivari -> split down to weeks 1-8
-        1
-        .
-        .
-        8
-    11858990-LeóGunnarVídisson -> split down to weeks 1-8
-        1
-        .
-        .
-        8
+This repository seperates the team submissions from the team members personal work. Next to that, all work is seperated into that of one's week.
+
 ```
 
+/ Team /
+
+    [ ( show week ) ++ "/ {FILES}" | week <- [ 1..8 ] ]  
+
+/ Members / 
+
+    [ member ++ "/" ++ (show week) ++ "/ {FILES}" | 
+         
+         member <- [ "11424907-ToineKhonraad",
+                     "11721677-PaulSpencer",
+                     "11784873-MichaelOlivari",
+                     "11858990-LeóGunnarVídisson" ],
+         
+         week   <- [ 1..8 ] ] 
+      
+```
+
+## Teachers
+
+- dr. Ana Oprescu
+- Hugo Meyer Ph.D. 
