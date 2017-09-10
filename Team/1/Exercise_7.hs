@@ -37,6 +37,9 @@ goodPrefix Visa ccnr = head ccnr == '4'
 goodPrefix MasterCard ccnr = let pf = read $ take 6 ccnr in elem pf $ [510000..559999]++[222100..272099]
 goodPrefix AmericanExpress ccnr = let pf = take 2 ccnr in pf == "34" || pf == "37" 
 
+
+
 {-
+(tests would just be to use valid cc numbers and run them past the various CC validators)
 This was relatively simple (particularly if one had seen the problem in different languages)
 -}
