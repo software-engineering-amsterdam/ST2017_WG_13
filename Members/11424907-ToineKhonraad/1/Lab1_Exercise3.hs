@@ -1,4 +1,4 @@
-module Lab1_Excercise3 where
+module Lab1_Exercise3 where
 
 import Test.QuickCheck
 
