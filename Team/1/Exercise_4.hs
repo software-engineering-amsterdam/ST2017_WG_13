@@ -58,7 +58,21 @@ reverseOfPrimesNotInListAreNotPrimes_withIndex::Property
 reverseOfPrimesNotInListAreNotPrimes_withIndex = forAll validNonPrimeIndexes reverseOfPrimesNotInListAreNotPrimes
 
 {-
+Q - how to test?
+A - we threw in a load of tests, basically to do the following:
+
+  Let a final test show that for all 2 < numbers < 10000 they 
+  are either:
+      in the list
+    or
+      not prime 
+    or
+      the reverse is not prime
+
+
 here we decided to take advantage of quickchecks inbuilt ranges for testing
 
 Some tests are probably redundant here.
+
+testing reverseint
 -}

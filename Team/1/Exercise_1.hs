@@ -33,10 +33,12 @@ propertyHoldsQ3::Integer -> Bool
 propertyHoldsQ3 k = (k >= 0) --> lhsQ3 k == rhsQ3 k
 
 {-
+
 Notes:
 We had much discussion about whether to use a precondition or to use a Natural Type in order to limit the 
 domain of testing.
 We were split and ended up choosing a precondition rather than the Natural Type because the set up of the lab
 heavily indicates, by showing us the implication definition, that is what we should use.
 Please look at Pauls repository for the implementation that uses a type rather than a precondition.
+
 -}

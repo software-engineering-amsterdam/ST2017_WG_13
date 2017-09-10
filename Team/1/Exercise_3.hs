@@ -29,3 +29,19 @@ testableDomain = choose (0, 11)
 
 -- with generator all tests are valid tests
 propertyHoldsForFirst10 = forAll testableDomain propertyHolds
+
+{-
+Q - is the property hard to test, why?
+A - Yes,
+
+  This is hard to test, because the left and right side of the 
+  equation grow exponentially with n.
+
+Q What are you testing?
+A We are testing mathematical fact.
+
+
+The same issues and decisions that were involved in Exercise 2 were also issues here in Exercise 3
+we went with the same solution methods.
+the solution space is much smaller here because the growth of the factoral
+-}
