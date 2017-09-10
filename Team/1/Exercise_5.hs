@@ -23,5 +23,8 @@ primeOf101Primes = pop 0 101
             where 
                 slice = take (len) $ drop start primes
 {-
+Q - how to test?
+A - test all before are not prime and this result is prime
+
 sieve, slice, simple!
 -}
