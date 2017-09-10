@@ -22,7 +22,6 @@ data Boy = Matthew | Peter | Jack | Arnold | Carl
            deriving (Eq,Show)
 boys = [Matthew, Peter, Jack, Arnold, Carl]
 
-
 --Translated each boys statement of accusation to the corresponding logic
 accuses :: Boy -> Boy -> Bool
 accuses Matthew x = (x /= Matthew) && (x /= Carl) 

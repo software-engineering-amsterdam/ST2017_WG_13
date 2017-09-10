@@ -22,3 +22,6 @@ primeOf101Primes = pop 0 101
             | otherwise            = pop (start + 1) len 
             where 
                 slice = take (len) $ drop start primes
+{-
+sieve, slice, simple!
+-}

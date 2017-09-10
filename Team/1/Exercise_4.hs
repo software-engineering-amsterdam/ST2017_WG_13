@@ -58,5 +58,7 @@ reverseOfPrimesNotInListAreNotPrimes_withIndex::Property
 reverseOfPrimesNotInListAreNotPrimes_withIndex = forAll validNonPrimeIndexes reverseOfPrimesNotInListAreNotPrimes
 
 {-
+here we decided to take advantage of quickchecks inbuilt ranges for testing
+
 Some tests are probably redundant here.
 -}

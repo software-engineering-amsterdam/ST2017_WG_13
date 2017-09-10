@@ -12,7 +12,7 @@ isPrime n = n > 1 && all (\x -> n `rem` x /= 0) ps
     where 
         ps = takeWhile (\y -> y^2 <= n) primes
 
--- sligtly modified from exercise 5
+-- same underlying code as Exercise 5, so copied it and slightly changed
 counterConsPlusOne = pop 0 2
     where
         pop start len
@@ -21,8 +21,7 @@ counterConsPlusOne = pop 0 2
             where 
                 slice = take (len) $ drop start primes
 
----  or should we go for michaels answer?
-
+-- We thought the following was just as good:
 -- infinite list of primes growing from 2
 primeCombos :: [[Integer]]
 primeCombos = [take n primes | n <- [2..]]
@@ -35,3 +34,7 @@ smallestCounterExample = head [ps | ps <- primeCombos, notPrimeProduct ps]
 
 solution :: (Integer, [Integer])
 solution = ((product smallestCounterExample) + 1, smallestCounterExample)
+
+{-
+We had two differing approaches and could not decide between the tow so presented them both
+-}
