@@ -2,15 +2,12 @@ module Lab1 where
 import Data.List
 import Test.QuickCheck
 
-data Boy = Matthew | Peter | Jack | Arnold | Carl deriving (Eq,Show, Ord)
+data Boy = Matthew | Peter | Jack | Arnold | Carl deriving (Eq,Show)
 boys = [Matthew, Peter, Jack, Arnold, Carl]
 
-xor::Bool -> Bool -> Bool
-xor True False = True
-xor False True = True
-xor _ _ = False
+xor :: Bool -> Bool -> Bool
+a `xor` b = (a || b) && not ( a && b )
 
---Translated each boys statement of accusation to the corresponding logic
 accuses :: Boy -> Boy -> Bool
 accuses Matthew x = (x == Jack) || (x == Peter) || (x == Arnold)
 accuses Peter x = (x == Matthew) || (x == Jack)
@@ -21,17 +18,21 @@ accuses Carl x = not (accuses Arnold x)
 -- Accusers is the list of boys accusing the selected boy, so a list 
 -- comprehension of all the boys who accuse x makes sense
 accusers :: Boy -> [Boy]
-accusers x = [k | k <- boys, accuses k x]
+accusers accused = [ boy | boy <- boys, accuses boy accused]  
 
--- If we assume three boys are telling the truth about their accusation,
--- then the guilty ones will have 3 accusers
-guilty :: [Boy]
-guilty = [ k | k <- boys, length (accusers k) == 3]
+accusations :: [ ( Boy, [Boy] ) ]                        
+accusations = [ (boy, accusers boy) |  boy <- boys ]
 
--- Those boys who are honest are the ones that have true accusations to those boys who are guilty
-honest:: [Boy]
-honest = [ x | x <- boys, y <- guilty, accuses x y]
+thief :: Boy
+thief = fst $ head $ filter ( \x -> length ( snd x ) == 3 ) accusations 
 
-dishonest:: [Boy]
-dishonest = [x | x <- boys, y <- guilty, not (accuses x y)]
+honest :: [Boy]
+honest = snd $ head $ filter ( \x -> length ( snd x ) == 3 ) accusations  
 
+{-
+notes: 
+the consensus was to use a truthtable as a function of propositions. 
+the minority opinion was Paul's version that split the problem in half, by using  
+Jack, Carl and Arnold to determine who is telling the truth and Matthew and Peters statements to find
+who the thief was.
+-}

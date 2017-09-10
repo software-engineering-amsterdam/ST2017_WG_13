@@ -12,26 +12,31 @@ luhn cc = 0 == (luhnsum cc) `mod` 10
         ld [x] = x
         ld (x:y:zs) = x + ((2*y) `div` 10) + ((2*y) `mod` 10) + ld zs
 
+data CCVendor = Visa | AmericanExpress | MasterCard
+
 isAmericanExpress:: Integer -> Bool
-isAmericanExpress n = rightLength && goodPrefix && luhn n
-    where 
-        cs = show n
-        rightLength = 0 < length cs && length cs <= 15
-        prefix = take 2 cs
-        goodPrefix = prefix == "34" || prefix == "37" 
+isAmericanExpress n = goodCard AmericanExpress n
 
-isMaster:: Integer -> Bool
-isMaster n = rightLength && goodPrefix && luhn n
-    where
-        cs = show n
-        rightLength = 5 < length cs && length cs <= 19
-        prefix = read $ take 6 cs
-        goodPrefix = (prefix >= 510000 && 559999 >= prefix) || (prefix >= 222100 && 272099 >= prefix)         
+isMasterCard::Integer -> Bool
+isMasterCard n = goodCard MasterCard n
 
-isVisa :: Integer -> Bool
-isVisa n = rightLength && goodPrefix && luhn n
-    where 
-        cs = show n
-        rightLength = 0 < length cs && length cs <= 19
-        goodPrefix = head cs == '4'
-        
+isVisaCard::Integer -> Bool
+isVisaCard n = goodCard Visa n
+
+goodCard::CCVendor -> Integer -> Bool
+goodCard cc n = all (==True) [rightLength cc ccnr, goodPrefix cc ccnr, luhn n]
+    where ccnr = show n
+    
+rightLength::CCVendor -> String -> Bool
+rightLength Visa ccnr = 0 < length ccnr && length ccnr <= 19
+rightLength MasterCard ccnr =  5 < length ccnr && length ccnr <= 19
+rightLength AmericanExpress ccnr = 0 < length ccnr && length ccnr <= 15
+
+goodPrefix::CCVendor -> String -> Bool
+goodPrefix Visa ccnr = head ccnr == '4'
+goodPrefix MasterCard ccnr = let pf = read $ take 6 ccnr in elem pf $ [510000..559999]++[222100..272099]
+goodPrefix AmericanExpress ccnr = let pf = take 2 ccnr in pf == "34" || pf == "37" 
+
+{-
+This was relatively simple (particularly if one had seen the problem in different languages)
+-}
