@@ -1,3 +1,9 @@
+module Lab2 where
+import Data.List
+import Data.Char
+import System.Random
+import Test.QuickCheck
+    
 -- Implementing and testing ROT13 encoding
 
 -- ROT13 is a single letter substitution cipher that is used in online forums for hiding spoilers.

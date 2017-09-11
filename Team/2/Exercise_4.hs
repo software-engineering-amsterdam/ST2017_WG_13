@@ -1,3 +1,9 @@
+module Lab2 where
+import Data.List
+import Data.Char
+import System.Random
+import Test.QuickCheck
+    
 -- Recognizing Permutations
 
 -- A permutation of a finite list is another finite list with the same elements, but possibly in a different 

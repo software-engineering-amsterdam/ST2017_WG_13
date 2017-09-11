@@ -1,9 +1,3 @@
-module Lab2 where
-import Data.List
-import Data.Char
-import System.Random
-import Test.QuickCheck
-
 -- Recognizing and generating derangements
 
 -- A derangement of the list [0..n-1] of natural numbers is a permutation π of the list with the property 

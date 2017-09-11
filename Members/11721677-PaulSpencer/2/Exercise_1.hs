@@ -23,3 +23,9 @@ import Test.QuickCheck
 
 -- Implement this test, and report on the test results.
 
+probs :: Int -> IO [Float]
+probs 0 = return []
+probs n = do
+             p <- getStdRandom random
+             ps <- probs (n-1) 
+             return (p:ps)

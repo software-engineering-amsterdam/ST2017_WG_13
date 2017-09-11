@@ -1,3 +1,9 @@
+module Lab2 where
+import Data.List
+import Data.Char
+import System.Random
+import Test.QuickCheck
+
 -- Implementing and testing IBAN validation
 
 -- The International Bank Account Number (IBAN) was designed to facility international money transfer, 

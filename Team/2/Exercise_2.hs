@@ -1,3 +1,8 @@
+module Lab2 where
+import Data.List
+import Data.Char
+import System.Random
+import Test.QuickCheck
 -- Recognizing triangles
 
 -- Write a program (in Haskell) that takes a triple of integer values as arguments and gives as output one of 
