@@ -12,7 +12,7 @@
 
 This repository seperates the team submissions from the team members personal work. Next to that, all work is seperated into that of one's week.
 
-```
+```Haskell
 
 / Team /
 

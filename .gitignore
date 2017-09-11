@@ -1,0 +1,12 @@
+bin
+.settings
+.project
+.metadata
+.classpath
+.cache
+.history
+.idea*
+*~
+target/
+.DS_Store
+._*
