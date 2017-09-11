@@ -1,4 +1,5 @@
-module Lab2 where
+module Lab2_Exercise4 where
+  
 import Data.List
 import Data.Char
 import System.Random
@@ -21,3 +22,24 @@ import Test.QuickCheck
 -- Can you automate the test process? Use the techniques presented in this week's lecture. Also use QuickCheck.
 
 -- Deliverables: Haskell program, concise test report, indication of time spent.
+
+
+
+
+isPermutation :: Eq a => [a] -> [a] -> Bool
+
+
+-- 
+-- The LEFT -<= Right operator means something like 
+-- all elements of left are element of right
+
+left -<= right = foldl ( \acc x -> acc && x `elem` right) True left
+
+left =>- right = right -<= left
+
+left -<==>- right = left =>- right && left -<= right 
+              
+isPermutation a1 a2 = length a1 == length a2  && a1 -<==>- a2 
+
+            
+    
