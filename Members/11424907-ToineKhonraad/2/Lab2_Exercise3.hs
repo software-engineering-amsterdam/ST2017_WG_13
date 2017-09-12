@@ -19,7 +19,6 @@ b) Provide a descending strength list of all the implemented properties.
 
 ------------------------------------------------------------------
 
-
 -}
 
 import Data.List
@@ -32,17 +31,16 @@ forall = flip all
 
 stronger, weaker :: [a] -> (a -> Bool) -> (a -> Bool) -> Bool
 stronger xs p q = forall xs (\x -> p x --> q x)
---weaker   xs p q = stronger xs q p 
-weaker   xs p q = not (stronger xs p q)
---------------------------------------------- ! ! ! ! ! ! HELP 
+weaker   xs p q = stronger xs q p 
 
-quicksort  :: (Ord a) =>  [a] -> [a]
-quicksort []     =  []
-quicksort (x:xs) =  quicksort ( filter (<= x) xs )
-                    ++ 
-                    [x]
-                    ++ 
-                    quicksort ( filter (> x) xs )
+strength xs p q 
+  | (stronger xs p q)                        = 3
+  | (stronger xs p q ) && ( weaker  xs p q ) = 2
+  | (weaker xs p q )                         = 1
+  
+--weaker   xs p q = not (stronger xs p q)
+
+-- <<<<<<< HELP 
 
 testList :: (Enum t, Num t) => [t]
 testList = [-10..10]
@@ -64,13 +62,30 @@ stronger' l p1 p2 = stronger l (snd p1) (snd p2)
 weaker' :: [a2] -> (a1, a2 -> Bool) -> (a, a2 -> Bool) -> Bool
 weaker'   l p1 p2 = weaker   l (snd p1) (snd p2)
 
-quicksort'' :: (Num a, Enum a) => [(a1, a -> Bool)] -> [(a1, a -> Bool)]
-quicksort'' []     =  []
-quicksort'' (x:xs) =  quicksort'' strongerthan  ++ [x] ++ quicksort'' weakerthan 
-                      where
-                            strongerthan = filter ( stronger' testList x ) xs
-                            weakerthan   = filter ( weaker'   testList x ) xs 
+strength'   l p1 p2 = strength   l (snd p1) (snd p2)
+
+
+
+quicksort :: (Num a, Enum a) => [(a1, a -> Bool)] -> [(a1, a -> Bool)]
+quicksort []     =  []
+quicksort (x:xs) =  quicksort strongerOnes    ++ 
+                    [x]                       ++ 
+                    quicksort weakerOnes 
+                
+                    where
+                            strongerOnes = filter ( stronger' testList x ) xs
+                            weakerOnes   = filter ( weaker'   testList x ) xs 
+
   
+quicksort' :: (Num a, Enum a) => [(a1, a -> Bool)] -> [(a1, a -> Bool)]
+quicksort' []     =  []
+quicksort' (x:xs) =  quicksort' strongerOnes  ++ 
+                    [x]                       ++ 
+                    quicksort' weakerOnes 
+                
+                    where
+                            strongerOnes = filter ( stronger' testList x ) xs
+                            weakerOnes   = filter ( weaker'   testList x ) xs 
  
 
 
