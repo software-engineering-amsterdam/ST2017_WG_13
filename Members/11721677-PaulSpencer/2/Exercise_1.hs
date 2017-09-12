@@ -81,6 +81,6 @@ runXTimes'::Int -> Int -> IO [Float]
 runXTimes' _ 0 = return []
 runXTimes' n c = liftM2 (++) (probs n) (runXTimes' n (c-1))
 
-runLotsOfTimes::Int -> IO [Int]
-runLotsOfTimes n = liftM (map quartile) (runXTimes n 1000) 
+runLotsOfTimes'::Int -> IO [Int]
+runLotsOfTimes' n = liftM (map quartile) (runXTimes n 1000) 
     
