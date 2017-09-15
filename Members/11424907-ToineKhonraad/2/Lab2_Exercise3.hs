@@ -23,69 +23,76 @@ b) Provide a descending strength list of all the implemented properties.
 
 import Data.List
 
-infix 1 --> 
-(-->) :: Bool -> Bool -> Bool
-p --> q = (not p) || q
+import Lecture2
 
-forall = flip all
-
-stronger, weaker :: [a] -> (a -> Bool) -> (a -> Bool) -> Bool
-stronger xs p q = forall xs (\x -> p x --> q x)
-weaker   xs p q = stronger xs q p 
-
-strength xs p q 
-  | (stronger xs p q)                        = 3
-  | (stronger xs p q ) && ( weaker  xs p q ) = 2
-  | (weaker xs p q )                         = 1
+data Strength = Equivalent | Stronger | Weaker | Incomparable deriving (Eq, Ord, Show,  Enum)
   
---weaker   xs p q = not (stronger xs p q)
+propertyList :: [ ( Int, (Integer -> Bool) ) ]
 
--- <<<<<<< HELP 
-
-testList :: (Enum t, Num t) => [t]
-testList = [-10..10]
-
-theList :: [ ( Int, (Integer -> Bool) ) ]
-theList = [ 
-    ( 1, even ),
-    ( 2, (\ x -> even x && x > 3) ),
-    ( 3, (\ x -> even x || x > 3) ),
-    ( 4, (\ x -> (even x && x > 3) || even x) )
-
-  ] 
+propertyList = [ 
+            {-
+              ----------------------------------------------------
+              label   property
+              ----------------------------------------------------
+            -}
+            (   1,      even                                  ),
+            (   2,      (\ x -> even x && x > 3)              ),
+            (   3,      (\ x -> even x || x > 3)              ),
+            (   4,      (\ x -> (even x && x > 3) || even x)  ),
+            (   5,      (\ x -> x > 3 )                       ) 
+          ] 
            
+{-
+  The fifth property given in the list above is added so to atleast have one that is 
+  incomparable to the others.
+-}
 
 
-stronger' :: [a2] -> (a1, a2 -> Bool) -> (a, a2 -> Bool) -> Bool
-stronger' l p1 p2 = stronger l (snd p1) (snd p2)
+comparePropertyForList :: [a] -> (a -> Bool) -> (a -> Bool) -> Strength
+comparePropertyForList xs p q = 
 
-weaker' :: [a2] -> (a1, a2 -> Bool) -> (a, a2 -> Bool) -> Bool
-weaker'   l p1 p2 = weaker   l (snd p1) (snd p2)
+                let  pq = stronger xs p q 
+                     qp = stronger xs q p 
+                in 
+                  if pq && qp then Equivalent
+                  else if pq  then Stronger
+                  else if qp  then Weaker
+                  else             Incomparable
 
-strength'   l p1 p2 = strength   l (snd p1) (snd p2)
-
-
-
-quicksort :: (Num a, Enum a) => [(a1, a -> Bool)] -> [(a1, a -> Bool)]
-quicksort []     =  []
-quicksort (x:xs) =  quicksort strongerOnes    ++ 
-                    [x]                       ++ 
-                    quicksort weakerOnes 
-                
-                    where
-                            strongerOnes = filter ( stronger' testList x ) xs
-                            weakerOnes   = filter ( weaker'   testList x ) xs 
 
   
-quicksort' :: (Num a, Enum a) => [(a1, a -> Bool)] -> [(a1, a -> Bool)]
-quicksort' []     =  []
-quicksort' (x:xs) =  quicksort' strongerOnes  ++ 
-                    [x]                       ++ 
-                    quicksort' weakerOnes 
-                
-                    where
-                            strongerOnes = filter ( stronger' testList x ) xs
-                            weakerOnes   = filter ( weaker'   testList x ) xs 
- 
+quicksort' :: (Num a, Enum a) => [a] -> [(a1, a -> Bool)] -> [(a1, a -> Bool)]
+quicksort' domain []     =  []
+quicksort' domain (x:xs) =  quicksort' domain [ a | a <- xs, comparePropertyForList domain (snd x) (snd a)  == Equivalent  ] 
+                     ++
+                     quicksort' domain [ a | a <- xs, comparePropertyForList domain (snd x) (snd a)  == Stronger  ] 
+                     ++
+                     [x]                       
+                     ++ 
+                     quicksort' domain [ a | a <- xs, comparePropertyForList domain (snd x) (snd a)  == Weaker  ] 
+                     ++ 
+                     quicksort' domain [ a | a <- xs, comparePropertyForList domain (snd x) (snd a)  == Incomparable  ] 
 
 
+showordered domain = [ fst x  | x <- quicksort' domain propertyList ] 
+
+{-
+
+Results in ghci:
+-----------------------------------------------------------------
+print $ showordered [-100..100]
+[4,3,1,2,5]
+
+print $ showordered []
+[5,4,3,2,1]
+
+print $ showordered [   3..100]
+[4,2,5,3,1]
+
+print $ showordered [-100..0]
+[4,3,1,5,2]
+
+-}
+
+
+-- Time spent: 3 hours
