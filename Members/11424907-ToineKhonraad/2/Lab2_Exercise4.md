@@ -1,6 +1,6 @@
 # Exercise 4
 
-### Recognizing Permutations###
+### Recognizing Permutations ###
  
 A permutation of a finite list is another finite list with the same elements, but possibly in a different order. For example, [3,2,1] is a permutation of [1,2,3], but [2,2,0] is not. 
 
