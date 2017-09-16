@@ -33,7 +33,6 @@ import qualified Data.Set as S
 
 deran::Int -> [[Int]]
 deran n = filter areSwapped $ permutations [0.. (n-1)]
-deran' n = [0.. (n-1)]
 
 areSwapped::[Int] -> Bool
 areSwapped perm = all (==False) $ zipWith (==) perm [0..]
@@ -48,6 +47,7 @@ isDerangement os@(x:xs) dss@(ys:yss)
     | not $ all (==True) $ map (sameElems os) dss             = False
     | otherwise  = True
 
+-- chech that the derangement of derangemnt includes the derangement
 
 -- inspired by Ben Millwood's answer https://stackoverflow.com/questions/15319136/how-to-compare-two-lists-in-haskell
 sameElems xs ys = S.fromList xs == S.fromList ys
