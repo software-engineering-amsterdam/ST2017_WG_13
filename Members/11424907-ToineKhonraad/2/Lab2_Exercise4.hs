@@ -5,41 +5,23 @@ import Data.Char
 import System.Random
 import Test.QuickCheck
     
--- Recognizing Permutations
+import Lecture2
 
--- A permutation of a finite list is another finite list with the same elements, but possibly in a different 
--- order. For example, [3,2,1] is a permutation of [1,2,3], but [2,2,0] is not. Write a function
-
---  isPermutation :: Eq a => [a] -> [a] -> Bool
--- that returns True if its arguments are permutations of each other.
-
--- Next, define some testable properties for this function, and use a number of well-chosen lists to test 
--- isPermutation. You may assume that your input lists do not contain duplicates. What does this mean for 
--- your testing procedure?
-
--- Provide an ordered list of properties by strength using the weakear and stronger definitions.
-
--- Can you automate the test process? Use the techniques presented in this week's lecture. Also use QuickCheck.
-
--- Deliverables: Haskell program, concise test report, indication of time spent.
-
-
-
+(-<-) :: Eq a => [a] -> [a] -> Bool
+left -<- right = all (True ==) [ x `elem` right  | x <- left  ]
 
 isPermutation :: Eq a => [a] -> [a] -> Bool
+isPermutation left right = left -<- right && right -<- left
 
+propSelfPermutation :: Eq a => [a] -> Bool
+propSelfPermutation a =  isPermutation a a
 
--- 
--- The LEFT -<= Right operator means something like 
--- all elements of left are element of right
+propReverseInv :: Eq a => [a] -> Bool
+propReverseInv a = isPermutation ( reverse a ) a
 
-left -<= right = foldl ( \acc x -> acc && x `elem` right) True left
+list1 = [-100,100]
+list2 = ['a'..'z']
+list3 = []
+list4 = [()]
 
-left =>- right = right -<= left
-
-left -<==>- right = left =>- right && left -<= right 
-              
-isPermutation a1 a2 = length a1 == length a2  && a1 -<==>- a2 
-
-            
-    
+{- Time spent 2 hours -}
