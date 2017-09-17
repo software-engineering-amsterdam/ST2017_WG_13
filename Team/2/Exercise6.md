@@ -70,6 +70,7 @@ In order to test the implementation, 3 testable properties are created based on 
 1. The encryption of the encryption of the original string, is the original string itself.
 
 **Precondition:**  Input is string
+
 **Postcondition:** The encryption of the encryption of the string is the original input string.
 ```haskell
 identityProp :: [Char] -> Bool
@@ -78,6 +79,7 @@ identityProp s = (rot13 $ rot13 s) == s
 2. Only alphabetical characters are affected by the encryption. These are replaced by the character which is 13 places further along in the alphabet.
 
 **Precondition:**  character is alphabetical
+
 **Postcondition:** character is replaced by letter 13 positions further in alphabet
 ```haskell
 affectedProp :: Char -> Bool
@@ -89,9 +91,12 @@ affectedProp c =
 3. Non-alphabetical characters are unaffected by the encrytion.
 
 **Precondition:**  character is non-alphabetical
+
 **Postcondition:** character remains unchanged in encryption
 ```haskell
 unaffectedProp :: Char -> Bool
 unaffectedProp c = 
         (not (c `elem` (['a'..'z'] ++ ['A'..'Z']))) --> (rotChar13 c == c)
 ```
+
+QuickCheck on these properties passes all tests.
