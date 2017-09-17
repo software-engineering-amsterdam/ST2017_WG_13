@@ -1,6 +1,6 @@
 # Exercise 6
 
-~ Total time spent = 1.5hrs
+~ Total time spent = 45mins
 ### Implementing and testing ROT13 encoding ###
 
 ROT13 is a single letter substitution cipher that is used in online forums for hiding spoilers.
@@ -95,3 +95,6 @@ unaffectedProp :: Char -> Bool
 unaffectedProp c = 
         (not (c `elem` (['a'..'z'] ++ ['A'..'Z']))) --> (rotChar13 c == c)
 ```
+
+
+QuickCheck on these properties pass all tests.
