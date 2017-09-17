@@ -1,11 +1,21 @@
 module Lab2 where
 import Data.List as L
 import Data.Char
+import System.Random
 import Test.QuickCheck
 import Data.Map as M
 import Exercise_7_TestData
 
 -- Deliverables: Haskell program, concise test report, indication of time spent.
+
+-- Tests:
+-- First that it works: 
+validateIbansfromList::Property
+validateIbansfromList = forAll validIbanIndexes validIbansValidatedProperty
+
+-- And Now that it does not incorrectly work:
+invalidIbansfromList::Property        
+invalidIbansfromList = forAll indexAndOffset changedCheckNumIsInvalid
 
 -- first, clean input then check the countrylength is valid against a map of the valid countryLengths.
 -- Next calculate the checkSum by moving first 4 to end, converting letters to numbers and checking,
@@ -53,9 +63,6 @@ validIbansValidatedProperty k = iban $ validIbans !! k
 validIbanIndexes:: Gen Int
 validIbanIndexes = choose (0, (length validIbans)-1)
 
-validateIbansfromList::Property
-validateIbansfromList = forAll validIbanIndexes validIbansValidatedProperty
-
 ----------------------
 
 -- Check if manipulating the checknum of valid Ibans causes checksums to fail
@@ -77,5 +84,3 @@ changedCheckNumIsInvalid (index, offset) = not $ iban invalidIbanCheckNum
         zeropad n = reverse $ take 2 $ reverse $ "00" ++ (show n)
         invalidIbanCheckNum = (take 2 validIban) ++ (zeropad invalidchecknum) ++ (drop 4 validIban)
 
-invalidIbansfromList::Property        
-invalidIbansfromList = forAll indexAndOffset changedCheckNumIsInvalid
