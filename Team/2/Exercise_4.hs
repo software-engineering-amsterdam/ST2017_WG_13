@@ -1,23 +1,27 @@
-module Lab2 where
+module Lab2_Exercise4 where
+  
 import Data.List
 import Data.Char
 import System.Random
 import Test.QuickCheck
     
--- Recognizing Permutations
+import Lecture2
 
--- A permutation of a finite list is another finite list with the same elements, but possibly in a different 
--- order. For example, [3,2,1] is a permutation of [1,2,3], but [2,2,0] is not. Write a function
+(-<-) :: Eq a => [a] -> [a] -> Bool
+left -<- right = all (True ==) [ x `elem` right  | x <- left  ]
 
---  isPermutation :: Eq a => [a] -> [a] -> Bool
--- that returns True if its arguments are permutations of each other.
+isPermutation :: Eq a => [a] -> [a] -> Bool
+isPermutation left right = left -<- right && right -<- left
 
--- Next, define some testable properties for this function, and use a number of well-chosen lists to test 
--- isPermutation. You may assume that your input lists do not contain duplicates. What does this mean for 
--- your testing procedure?
+propSelfPermutation :: Eq a => [a] -> Bool
+propSelfPermutation a =  isPermutation a a
 
--- Provide an ordered list of properties by strength using the weakear and stronger definitions.
+propReverseInv :: Eq a => [a] -> Bool
+propReverseInv a = isPermutation ( reverse a ) a
 
--- Can you automate the test process? Use the techniques presented in this week's lecture. Also use QuickCheck.
+list1 = [-100,100]
+list2 = ['a'..'z']
+list3 = []
+list4 = [()]
 
--- Deliverables: Haskell program, concise test report, indication of time spent.
+{- Time spent 2 hours -}
