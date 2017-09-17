@@ -7,7 +7,18 @@ import Test.QuickCheck
 import Test.QuickCheck.Monadic
 -- Implement this test, and report on the test results.
 
--- this is the test:
+-- the test:
+prop_isRandomSpread_limited::Property
+prop_isRandomSpread_limited = forAll testRange prop_isRandomSpread
+
+testRange:: Gen Int
+testRange = choose (1,20)
+
+prop_isRandomSpread:: Int -> Property
+prop_isRandomSpread n = monadicIO $ do
+    run (isRandomSpread n)
+
+-- the program
 isRandomSpread :: Int -> IO Bool
 isRandomSpread n = (liftM (isRandom . fillBuckets) (runLotsOfTimes n))
 
