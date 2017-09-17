@@ -1,27 +1,6 @@
-
--- Next, test your implementation using some suitable list of examples.
-
--- Note It is not enough to test only with correct examples. You should invent a way to test with incorrect 
--- examples also.
-
--- Can you automate the test process?
-
--- Deliverables: Haskell program, concise test report, indication of time spent.
-
-{-
-  Time: 4 Hours
-  rbs.co.uk semse that tey have posted a none valid uk IBAN
-  See the Github link
-  http://www.rbs.co.uk/corporate/international/g0/guide-to-international-business/regulatory-information/iban/iban-example.ashx
-  
-  https://github.com/sprain/SprainValidatorBundle/issues/1
- -}
-
 module Iban where
 import Data.List.Utils
 import Data.Char
-
-
 
 --Tuples for country code and length
 countryAndLength = [("AL", 28), ("AD", 24), ("AT", 20), ("AZ", 28), ("BH", 22),("BE", 16),
@@ -76,5 +55,3 @@ help x = doMod(stringToInt(replaceLetters(filter (/=' ')(final x))))
 --Iban 
 iban :: String -> Bool
 iban x = ((validate x) && (help x))
-
-
