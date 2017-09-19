@@ -1,13 +1,37 @@
 module Lab3 where
 import Data.List
-import System.Random
+import Lecture3
 import Test.QuickCheck
 
--- Deliverables: 
--- ☒ conversion program with documentation,
--- ☒ indication of time spent.
+infix 1 -->
+(-->) :: Bool -> Bool -> Bool
+p --> q = (not p) || q
 
--- The lecture notes of this week discuss the conversion of Boolean formulas (formulas of propositional logic) 
--- into CNF form. The lecture notes also give a definition of a Haskell datatype for formulas of 
--- propositional logic, using lists for conjunctions and disjunctions. Your task is to write a Haskell 
--- program for converting formulas into CNF.
+forall :: [a] -> (a -> Bool) -> Bool
+forall = flip all
+
+-- Q3
+{-
+nnf (Prop x) = Prop x
+nnf (Neg (Prop x)) = Neg (Prop x)
+nnf (Neg (Neg f)) = nnf f
+nnf (Cnj fs) = Cnj (map nnf fs)
+nnf (Dsj fs) = Dsj (map nnf fs)
+nnf (Neg (Cnj fs)) = Dsj (map (nnf.Neg) fs)
+nnf (Neg (Dsj fs)) = Cnj (map (nnf.Neg) fs)
+-}
+
+cnfGenerator :: Form -> Form
+cnfGenerator = cnf . nnf . arrowfree 
+
+
+cnf :: Form -> Form
+cnf (Prop x) = Prop x
+cnf (Neg (Prop x)) = Neg (Prop x)
+
+cnf (Dsj [f, Cnj [p,q]]) = Cnj [ Dsj [cnf f, cnf p], Dsj [cnf f, cnf q] ]
+
+cnf (Dsj [Cnj [p,q], f]) = cnf (Dsj [f, Cnj [p,q]])
+
+cnf (Cnj fs) = Cnj (map cnf fs)
+cnf (Dsj fs) = Dsj (map cnf fs)
