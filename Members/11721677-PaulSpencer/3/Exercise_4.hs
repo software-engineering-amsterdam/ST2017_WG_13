@@ -10,19 +10,12 @@ import Lecture3
 -- ☒ test report
 -- ☒ indication of time spent
 
-instance Arbitrary Form where
-    arbitrary = sized createArbitraryLogicEquasion
-
-type LogicFormula = Form
-type LogicFormulaGenerator = Gen Form
-type RemainingOperators = Int
-type BinaryLogicOperation = (Form -> Form -> Form)
-type MultipleLogicOperation =  [Form] -> Form
-
-
 -- adapted from Quick Check A Lightweight Tool for Random Testing of Haskell Programs - 
 -- Koen Claessen, John Hughes
 -- https://www.st.cs.uni-saarland.de/edu/seminare/2005/advanced-fp/slides/meiser.pdf
+instance Arbitrary Form where
+    arbitrary = sized createArbitraryLogicEquasion
+
 createArbitraryLogicEquasion ::RemainingOperators -> LogicFormulaGenerator
 createArbitraryLogicEquasion 0 = addProposition
 createArbitraryLogicEquasion max = addArbitraryEquasion max
@@ -57,9 +50,10 @@ addEquivilance max = createBinaryLogicOperation Equiv max
 
 createBinaryLogicOperation:: BinaryLogicOperation -> RemainingOperators -> LogicFormulaGenerator 
 createBinaryLogicOperation binaryLogicOperation max = 
-    liftM2 binaryLogicOperation (addArbitraryEquasion $ newBinaryMax max) (addArbitraryEquasion $ newBinaryMax max)
+    liftM2 binaryLogicOperation (addArbitraryEquasion $ newMax max 2) (addArbitraryEquasion $ newMax max 2)
 
-newBinaryMax max = max `div` 2
+newMax::RemainingOperators -> Int -> RemainingOperators
+newMax max splitSize = max `div` splitSize
 
 addDisjunction :: RemainingOperators -> LogicFormulaGenerator
 addDisjunction max = createOperationWithList Dsj max
@@ -75,11 +69,14 @@ createOperationWithList multipleLogicOperation max = frequency [
 
 -- inspired by carls answer in 
 -- https://stackoverflow.com/questions/25300551/multiple-arbitrary-calls-returning-same-value
+createLogicOperationList::RemainingOperators -> Int -> Int -> MultipleLogicFormulaGenerator
 createLogicOperationList maxRemaining minLength maxLength = oneof $ 
     [replicateM actualLength (addArbitraryEquasion (maxRemaining `div` actualLength)) | actualLength <- [minLength..maxLength] ]
 
 
--- Test Properties
--- 1) test if the truth tables of the input formula and the output CNF is the equivalent
-
--- *(+(-1 (7<=>4) *(6 20)))
+type LogicFormula = Form
+type LogicFormulaGenerator = Gen Form
+type MultipleLogicFormulaGenerator = Gen [Form]
+type RemainingOperators = Int
+type BinaryLogicOperation = (Form -> Form -> Form)
+type MultipleLogicOperation =  [Form] -> Form
