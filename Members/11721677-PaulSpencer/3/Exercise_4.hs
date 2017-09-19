@@ -11,54 +11,72 @@ import Lecture3
 -- ☒ indication of time spent
 
 instance Arbitrary Form where
-    arbitrary = sized arbForm
+    arbitrary = sized createArbitraryLogicEquasion
+
+type LogicFormula = Form
+type LogicFormulaGenerator = Gen Form
+type RemainingOperators = Int
+type BinaryLogicOperation = (Form -> Form -> Form)
+type MultipleLogicOperation =  [Form] -> Form
+
 
 -- adapted from Quick Check A Lightweight Tool for Random Testing of Haskell Programs - 
 -- Koen Claessen, John Hughes
 -- https://www.st.cs.uni-saarland.de/edu/seminare/2005/advanced-fp/slides/meiser.pdf
-arbForm ::Int -> Gen Form
-arbForm 0 = propGen
-arbForm depth = frequency [
-    (2, propGen),
-    (6, negGen depth),
-    (6, implGen depth),
-    (6, equivGen depth),
-    (6, liftM Cnj (formListGenSmall depth)),
-    (6, liftM Dsj (formListGenSmall depth)),
-    (1, liftM Cnj (formListGenLarge depth)),
-    (1, liftM Dsj (formListGenLarge depth))]
+createArbitraryLogicEquasion ::RemainingOperators -> LogicFormulaGenerator
+createArbitraryLogicEquasion 0 = addProposition
+createArbitraryLogicEquasion max = addArbitraryEquasion max
+    
+addArbitraryEquasion :: RemainingOperators -> LogicFormulaGenerator
+addArbitraryEquasion max = oneof [
+    (addNegation max),
+    (addImplication max),
+    (addEquivilance max),
+    (addConjunction max),
+    (addDisjunction max),
+    (addProposition)]
 
-propGen:: Gen Form
-propGen = frequency [
-    (10, liftM Prop (choose (1,3))),
-    (7, liftM Prop (choose (4,7))),
-    (3, liftM Prop (choose (8,20))),
-    (1, liftM Prop (choose (20,10000)))]
+addProposition:: LogicFormulaGenerator
+addProposition = frequency [
+    (50, createPropositionWithIdBetween 1 3),
+    (30, createPropositionWithIdBetween 4 7),
+    (15, createPropositionWithIdBetween 8 20),
+    (5, createPropositionWithIdBetween 21 10000)]
 
-negGen :: Int -> Gen Form
-negGen depth = liftM Neg (arbForm (depth-1))
+createPropositionWithIdBetween::Int -> Int -> LogicFormulaGenerator
+createPropositionWithIdBetween min max = liftM Prop (choose (min, max))
 
-implGen :: Int -> Gen Form
-implGen depth = liftM2 Impl (arbForm (depth `div` 2)) (arbForm (depth `div` 2))
+addNegation :: RemainingOperators -> LogicFormulaGenerator
+addNegation max = liftM Neg (addArbitraryEquasion (max - 1))
 
-equivGen :: Int -> Gen Form
-equivGen depth = liftM2 Equiv (arbForm (depth `div` 2)) (arbForm (depth `div` 2))
+addImplication :: RemainingOperators -> LogicFormulaGenerator
+addImplication max = createBinaryLogicOperation Impl max
 
-cnjGen depth = frequency [
-    (20,liftM Dsj (formListGenSmall depth)),
-    (5,liftM Dsj (formListGenLarge depth)),
-    (1,liftM Dsj (formListGenVeryLarge depth))]
+addEquivilance :: RemainingOperators -> LogicFormulaGenerator
+addEquivilance max = createBinaryLogicOperation Equiv max
+
+createBinaryLogicOperation:: BinaryLogicOperation -> RemainingOperators -> LogicFormulaGenerator 
+createBinaryLogicOperation binaryLogicOperation max = 
+    liftM2 binaryLogicOperation (addArbitraryEquasion $ newBinaryMax max) (addArbitraryEquasion $ newBinaryMax max)
+
+newBinaryMax max = max `div` 2
+
+addDisjunction :: RemainingOperators -> LogicFormulaGenerator
+addDisjunction max = createOperationWithList Dsj max
+
+addConjunction :: RemainingOperators -> LogicFormulaGenerator
+addConjunction max = createOperationWithList Cnj max
+
+createOperationWithList::MultipleLogicOperation -> RemainingOperators -> LogicFormulaGenerator
+createOperationWithList multipleLogicOperation max = frequency [
+    (80, liftM multipleLogicOperation (createLogicOperationList max 2 3)),
+    (19, liftM multipleLogicOperation (createLogicOperationList max 4 10)),
+    (1, liftM multipleLogicOperation (createLogicOperationList max 11 50))]
 
 -- inspired by carls answer in 
 -- https://stackoverflow.com/questions/25300551/multiple-arbitrary-calls-returning-same-value
-formListGenSmall::Int -> Gen [Form]
-formListGenSmall depth = oneof $ [replicateM n (arbForm (depth `div` n)) | n <- [1..3] ]
-
-formListGenLarge::Int -> Gen [Form]
-formListGenLarge depth = oneof $ [replicateM n (arbForm (depth `div` n)) | n <- [4..10] ]
-
-formListGenVeryLarge::Int -> Gen [Form]
-formListGenVeryLarge depth = oneof $ [replicateM n (arbForm (depth `div` n)) | n <- [11..50] ]
+createLogicOperationList maxRemaining minLength maxLength = oneof $ 
+    [replicateM actualLength (addArbitraryEquasion (maxRemaining `div` actualLength)) | actualLength <- [minLength..maxLength] ]
 
 
 -- Test Properties
