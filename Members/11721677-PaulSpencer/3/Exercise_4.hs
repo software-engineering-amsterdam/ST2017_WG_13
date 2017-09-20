@@ -9,74 +9,69 @@ import Lecture3
 -- ☒ sequence of test properties
 -- ☒ test report
 -- ☒ indication of time spent
-
--- adapted from Quick Check A Lightweight Tool for Random Testing of Haskell Programs - 
--- Koen Claessen, John Hughes
--- https://www.st.cs.uni-saarland.de/edu/seminare/2005/advanced-fp/slides/meiser.pdf
 instance Arbitrary Form where
-    arbitrary = sized createArbitraryLogicEquasion
+    arbitrary = sized arbitraryFormulaGenerator
 
-createArbitraryLogicEquasion ::RemainingOperators -> LogicFormulaGenerator
-createArbitraryLogicEquasion 0 = addProposition
-createArbitraryLogicEquasion max = addArbitraryEquasion max
-    
-addArbitraryEquasion :: RemainingOperators -> LogicFormulaGenerator
-addArbitraryEquasion max = oneof [
-    (addNegation max),
-    (addImplication max),
-    (addEquivilance max),
-    (addConjunction max),
-    (addDisjunction max),
-    (addProposition)]
+arbitraryFormulaGenerator ::RemainingOperatorCount -> LogicFormulaGenerator
+arbitraryFormulaGenerator 0 = propositionGenerator
+arbitraryFormulaGenerator max = oneof [
+    (negationGenerator max),
+    (implicationGenerator max),
+    (equivilanceGenerator max),
+    (disjunctionGenerator max),
+    (conjunctionGenerator max),
+    (propositionGenerator)]
 
-addProposition:: LogicFormulaGenerator
-addProposition = frequency [
-    (50, createPropositionWithIdBetween 1 3),
-    (30, createPropositionWithIdBetween 4 7),
-    (15, createPropositionWithIdBetween 8 20),
-    (5, createPropositionWithIdBetween 21 10000)]
+propositionGenerator:: LogicFormulaGenerator
+propositionGenerator = frequency [
+    (50, propositionGeneratorWithIdBetween 1 3),
+    (30, propositionGeneratorWithIdBetween 4 7),
+    (15, propositionGeneratorWithIdBetween 8 20),
+    (5, propositionGeneratorWithIdBetween 21 10000)]
 
-createPropositionWithIdBetween::Int -> Int -> LogicFormulaGenerator
-createPropositionWithIdBetween min max = liftM Prop (choose (min, max))
+propositionGeneratorWithIdBetween::Int -> Int -> LogicFormulaGenerator
+propositionGeneratorWithIdBetween min max = liftM Prop (choose (min, max))
 
-addNegation :: RemainingOperators -> LogicFormulaGenerator
-addNegation max = liftM Neg (addArbitraryEquasion (max - 1))
+negationGenerator :: RemainingOperatorCount -> LogicFormulaGenerator
+negationGenerator max = liftM Neg (arbitraryFormulaGenerator (max - 1))
 
-addImplication :: RemainingOperators -> LogicFormulaGenerator
-addImplication max = createBinaryLogicOperation Impl max
+implicationGenerator :: RemainingOperatorCount -> LogicFormulaGenerator
+implicationGenerator max = binaryLogicFormulaGenerator Impl max
 
-addEquivilance :: RemainingOperators -> LogicFormulaGenerator
-addEquivilance max = createBinaryLogicOperation Equiv max
+equivilanceGenerator :: RemainingOperatorCount -> LogicFormulaGenerator
+equivilanceGenerator max = binaryLogicFormulaGenerator Equiv max
 
-createBinaryLogicOperation:: BinaryLogicOperation -> RemainingOperators -> LogicFormulaGenerator 
-createBinaryLogicOperation binaryLogicOperation max = 
-    liftM2 binaryLogicOperation (addArbitraryEquasion $ newMax max 2) (addArbitraryEquasion $ newMax max 2)
+disjunctionGenerator :: RemainingOperatorCount -> LogicFormulaGenerator
+disjunctionGenerator max = listOfLogicOperatorsGenerator Dsj max
 
-newMax::RemainingOperators -> Int -> RemainingOperators
-newMax max splitSize = max `div` splitSize
+conjunctionGenerator :: RemainingOperatorCount -> LogicFormulaGenerator
+conjunctionGenerator max = listOfLogicOperatorsGenerator Cnj max
 
-addDisjunction :: RemainingOperators -> LogicFormulaGenerator
-addDisjunction max = createOperationWithList Dsj max
+binaryLogicFormulaGenerator:: BinaryLogicOperation -> RemainingOperatorCount -> LogicFormulaGenerator 
+binaryLogicFormulaGenerator binaryLogicOperation max = 
+    liftM2 binaryLogicOperation 
+        (arbitraryFormulaGenerator $ updatedMax max 2) 
+        (arbitraryFormulaGenerator $ updatedMax max 2)
 
-addConjunction :: RemainingOperators -> LogicFormulaGenerator
-addConjunction max = createOperationWithList Cnj max
+updatedMax::RemainingOperatorCount -> Int -> RemainingOperatorCount
+updatedMax max splitSize = max `div` splitSize
 
-createOperationWithList::MultipleLogicOperation -> RemainingOperators -> LogicFormulaGenerator
-createOperationWithList multipleLogicOperation max = frequency [
-    (80, liftM multipleLogicOperation (createLogicOperationList max 2 3)),
-    (19, liftM multipleLogicOperation (createLogicOperationList max 4 10)),
-    (1, liftM multipleLogicOperation (createLogicOperationList max 11 50))]
+listOfLogicOperatorsGenerator::MultipleLogicOperation -> RemainingOperatorCount -> LogicFormulaGenerator
+listOfLogicOperatorsGenerator multipleLogicOperation max = frequency [
+    (80, liftM multipleLogicOperation (listOfLogicOperatorsGeneratorBetween max 2 3)),
+    (19, liftM multipleLogicOperation (listOfLogicOperatorsGeneratorBetween max 4 10)),
+    (1, liftM multipleLogicOperation (listOfLogicOperatorsGeneratorBetween max 11 50))]
 
--- inspired by carls answer in 
--- https://stackoverflow.com/questions/25300551/multiple-arbitrary-calls-returning-same-value
-createLogicOperationList::RemainingOperators -> Int -> Int -> MultipleLogicFormulaGenerator
-createLogicOperationList maxRemaining minLength maxLength = oneof $ 
-    [replicateM actualLength (addArbitraryEquasion (maxRemaining `div` actualLength)) | actualLength <- [minLength..maxLength] ]
+listOfLogicOperatorsGeneratorBetween::RemainingOperatorCount -> Int -> Int -> MultipleLogicFormulaGenerator
+listOfLogicOperatorsGeneratorBetween maxRemaining minLength maxLength = oneof $ 
+    [listOfLogicOperators maxRemaining actualLength | actualLength <- [minLength..maxLength] ]
 
+listOfLogicOperators::RemainingOperatorCount -> Int -> MultipleLogicFormulaGenerator
+listOfLogicOperators max len = replicateM len (arbitraryFormulaGenerator (updatedMax max len))
 
 type LogicFormula = Form
 type LogicFormulaGenerator = Gen Form
 type MultipleLogicFormulaGenerator = Gen [Form]
-type RemainingOperators = Int
+type RemainingOperatorCount = Int
 type BinaryLogicOperation = (Form -> Form -> Form)
 type MultipleLogicOperation =  [Form] -> Form
