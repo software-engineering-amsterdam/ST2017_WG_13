@@ -4,11 +4,10 @@ import Test.QuickCheck
 import Control.Monad
 import Lecture3
 
--- Deliverables: 
--- 🗹 generator for formulas
--- ☒ sequence of test properties
--- ☒ test report
--- ☒ indication of time spent
+{-
+  commentry on this question is found on the team wiki : 
+-}
+
 instance Arbitrary Form where
     arbitrary = sized arbitraryFormulaGenerator
 
@@ -29,9 +28,6 @@ propositionGenerator = frequency [
     (15, propositionGeneratorWithIdBetween 8 20),
     (5, propositionGeneratorWithIdBetween 21 10000)]
 
-propositionGeneratorWithIdBetween::Int -> Int -> LogicFormulaGenerator
-propositionGeneratorWithIdBetween min max = liftM Prop (choose (min, max))
-
 negationGenerator :: RemainingOperatorCount -> LogicFormulaGenerator
 negationGenerator max = liftM Neg (arbitraryFormulaGenerator (max - 1))
 
@@ -47,14 +43,20 @@ disjunctionGenerator max = listOfLogicOperatorsGenerator Dsj max
 conjunctionGenerator :: RemainingOperatorCount -> LogicFormulaGenerator
 conjunctionGenerator max = listOfLogicOperatorsGenerator Cnj max
 
+
+propositionGeneratorWithIdBetween::Int -> Int -> LogicFormulaGenerator
+propositionGeneratorWithIdBetween min max = liftM Prop (choose (min, max))
+
+
 binaryLogicFormulaGenerator:: BinaryLogicOperation -> RemainingOperatorCount -> LogicFormulaGenerator 
 binaryLogicFormulaGenerator binaryLogicOperation max = 
     liftM2 binaryLogicOperation 
         (arbitraryFormulaGenerator $ updatedMax max 2) 
         (arbitraryFormulaGenerator $ updatedMax max 2)
 
-updatedMax::RemainingOperatorCount -> Int -> RemainingOperatorCount
-updatedMax max splitSize = max `div` splitSize
+updatedMax::RemainingOperatorCount -> BranchCount -> RemainingOperatorCount
+updatedMax maxRemainingFormulas branchCount = maxRemainingFormulas `div` branchCount
+
 
 listOfLogicOperatorsGenerator::MultipleLogicOperation -> RemainingOperatorCount -> LogicFormulaGenerator
 listOfLogicOperatorsGenerator multipleLogicOperation max = frequency [
@@ -66,8 +68,9 @@ listOfLogicOperatorsGeneratorBetween::RemainingOperatorCount -> Int -> Int -> Mu
 listOfLogicOperatorsGeneratorBetween maxRemaining minLength maxLength = oneof $ 
     [listOfLogicOperators maxRemaining actualLength | actualLength <- [minLength..maxLength] ]
 
-listOfLogicOperators::RemainingOperatorCount -> Int -> MultipleLogicFormulaGenerator
+listOfLogicOperators::RemainingOperatorCount -> BranchCount -> MultipleLogicFormulaGenerator
 listOfLogicOperators max len = replicateM len (arbitraryFormulaGenerator (updatedMax max len))
+
 
 type LogicFormula = Form
 type LogicFormulaGenerator = Gen Form
@@ -75,3 +78,4 @@ type MultipleLogicFormulaGenerator = Gen [Form]
 type RemainingOperatorCount = Int
 type BinaryLogicOperation = (Form -> Form -> Form)
 type MultipleLogicOperation =  [Form] -> Form
+type BranchCount = Int
