@@ -56,7 +56,7 @@ arbitraryFormulaGenerator max = oneof [
     (propositionGenerator)]
 ````
 
-for readability we Retyped Int to be RemainingOperatorCount and Gen Form to be LogicFormulaGenerator
+for readability we Retyped `Int` to be `RemainingOperatorCount` and `Gen Form` to be `LogicFormulaGenerator`
 
 ````haskell
 type LogicFormulaGenerator = Gen Form
@@ -82,14 +82,14 @@ propositionGeneratorWithIdBetween::Int -> Int -> LogicFormulaGenerator
 propositionGeneratorWithIdBetween min max = liftM Prop (choose (min, max))
 ````
 
-To genererate the Proposition we use the liftM function to lift the Prop constructor into the int generator monad (Gen Int) that the function choose creates to return a logic formula generator (Gen Form / LogicFormulaGenerator). As the proposition generator does not recurse arbitraryFormulaGenerator, this proposition is now the terminating leaf of this branch of the formula.
+To genererate the Proposition we use the liftM function to lift the `Prop` constructor into the int generator monad (`Gen Int`) that the function choose creates to return a logic formula generator (`Gen Form` / `LogicFormulaGenerator`). As the proposition generator does not recurse `arbitraryFormulaGenerator`, this proposition is now the terminating leaf of this branch of the formula.
 
 **Discussion**
-Because there is a 1 in 7 chance that this will be picked first, there is a 1 in 7 chance that our tree will only be 1 proposition long, which is valid.  For clarity we chose to use oneof to select this generator, rather than weighting it lower by using frequency. We discussed whether or not to allow the selection of the proposition generator before reaching the natural end of a branch and decided to allow it to allow for much more naturally unbalanced formulas
+Because there is a 1 in 7 chance that this will be picked first, there is a 1 in 7 chance that our tree will only be 1 proposition long, which is valid.  For clarity we chose to use `oneof` to select this generator, rather than weighting it lower by using frequency. We discussed whether or not to allow the selection of the proposition generator before reaching the natural end of a branch and decided to allow it to allow for much more naturally unbalanced formulas
 
 
 #### negation generator
-The negation generator is simple, it applys the negation constructor to a formula created by recursively calling the arbitraryFormulaGenerator. because the arbitraryFormulaGenerator is of a monadic type it uses, as will the rest of the generators, liftM to put the constructor with in the LogicFormulaGenerator. 
+The negation generator is simple, it applys the negation constructor to a formula created by recursively calling the `arbitraryFormulaGenerator`. Because the `arbitraryFormulaGenerator` is of a monadic type it uses, as will the rest of the generators, `liftM` to put the constructor with in the `LogicFormulaGenerator`. 
 As negation only has one branch we reduce the maximum remaining formulas on that branch by 1.
 
 ````haskell
@@ -99,7 +99,7 @@ negationGenerator max = liftM Neg (arbitraryFormulaGenerator (max - 1))
 
 #### implication and equivalance generators
 
-The implcation and equivalence generators are binary operators and therefore need require a formula to be generated for both sides. If we were to just reduce the remaining operator count by 1 then because the recursion of the arbitraryFormulaGenerator has now split we would have a growth in possible formulas of approximatly n!/2, to prevent this growth we reduce the RemainingOperatorCount that we pass to each branch by half using the updatedMax function
+The implcation and equivalence generators are binary operators and therefore need require a formula to be generated for both sides. If we were to just reduce the remaining operator count by 1 then because the recursion of the `arbitraryFormulaGenerator` has now split we would have a growth in possible formulas of approximatly n!/2, to prevent this growth we reduce the `RemainingOperatorCount` that we pass to each branch by half using the `updatedMax` function
 
 ````haskell
 implicationGenerator :: RemainingOperatorCount -> LogicFormulaGenerator
@@ -118,15 +118,15 @@ updatedMax::RemainingOperatorCount -> BranchCount -> RemainingOperatorCount
 updatedMax maxRemainingFormulas branchCount = maxRemainingFormulas `div` branchCount
 ````
 
-in order to not repeat the same code for Impl and Equiv, the function binaryLogicFormulaGenerator was created that took in the constructors Impl and Equiv, which we had reTyped to BinaryLogicOperation for readability:
+in order to not repeat the same code for `Impl` and `Equiv`, the function `binaryLogicFormulaGenerator` was created that took in the constructors `Impl` and `Equiv`, which we had reTyped to `BinaryLogicOperation` for readability:
 
 ````haskell
 type BinaryLogicOperation = (Form -> Form -> Form)
 ````
 #### conjunction and disjunction generators
 conjunctions and disjunctions are constructed with a list of formulas.
-we decided that although we wanted to test long lists of formulas for conjunctions and disjunctions we would prefer to check a shorter list of conjunctions. Thus, in listOfLogicOperatorsGenerator we create 80/100 lists between 2 and 3 formulas, 19/100 have between 4 and 10, and 1/100 have upto 50 formulas.
-Having multiple recursivly created formulas has the same issue of size explosion, except much larger (instead of n^2, we can now have a - very small - possiblity of n^50 growth of potential formumula generation), thus when we are reduce the size of the number of formulas on the subsequent branch by a divisor of the number of branches created.
+We decided that although we wanted to test long lists of formulas for conjunctions and disjunctions we would prefer to check a shorter list of conjunctions. Thus, in `listOfLogicOperatorsGenerator` we create 80/100 lists between 2 and 3 formulas, 19/100 have between 4 and 10, and 1/100 have upto 50 formulas.
+Having multiple recursively created formulas has the same issue of size explosion, except much larger (instead of n^2, we can now have a - very small - possiblity of n^50 growth of potential formumula generation), thus when we are reduce the size of the number of formulas on the subsequent branch by a divisor of the number of branches created.
 
 ````haskell
 disjunctionGenerator :: RemainingOperatorCount -> LogicFormulaGenerator
@@ -150,11 +150,13 @@ listOfLogicOperators::RemainingOperatorCount -> BranchCount -> MultipleLogicForm
 listOfLogicOperators max len = replicateM len (arbitraryFormulaGenerator (updatedMax max len))
 ````
 
-listOfLogicOperatorsGeneratorBetween was inspired by https://stackoverflow.com/questions/25300551/multiple-arbitrary-calls-returning-same-value to deal with an issue we were having with reusing the randomly generated number for both the length of the function list and the redution factor of the remaining possible function count.
+`listOfLogicOperatorsGeneratorBetween` was inspired by https://stackoverflow.com/questions/25300551/multiple-arbitrary-calls-returning-same-value to deal with an issue we were having with reusing the randomly generated number for both the length of the function list and the redution factor of the remaining possible function count.
 
 ## Testing generator ##
-first we tested this by eye, using quickChecks generate function.  
+first we tested this by eye, using QuickChecks `generate` function.  
 To have an approximation that this will teminate we ran it with an limit of 100,000,000 functions. This took several minutes to complete, but it did terminate.
+
+
 
 
 ### sequence of test properties ###
