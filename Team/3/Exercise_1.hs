@@ -1,30 +1,17 @@
-module Lab3 where
-import Data.List
-import System.Random
+module Exercise_1 where 
+  
+import Lecture3
 import Test.QuickCheck
--- import Lecture3
 
--- Deliverables: 
--- ☒ implementation
--- ☒ description of your method of checking the definitions
--- ☒ indication of time spent.
+contradiction :: Form -> Bool
+contradiction f = not $ satisfiable f
 
--- The lecture notes of this week discuss the notions of satisfiability, tautology, contradiction,
--- logical entailment and logical equivalence for formulas of propositional logic.
+tautology :: Form -> Bool
+tautology f = all (\ v -> evl v f) (allVals f)
 
--- The lecture notes give a definition of satisfiable, for objects of type Form.
+entails :: Form -> Form -> Bool
+entails a b = tautology (Impl a b)
 
--- Your task is to give definitions of:
+equiv :: Form -> Form -> Bool
+equiv a b = tautology (Equiv a b )
 
---  contradiction :: Form -> Bool
-
---  tautology :: Form -> Bool
-
---  -- | logical entailment 
---  entails :: Form -> Form -> Bool
-
---  -- | logical equivalence
---  equiv :: Form -> Form -> Bool
-
--- Use a module that imports Lecture3.lhs or Lecture3.hs (commented out above). Check that your definitions 
--- are correct.

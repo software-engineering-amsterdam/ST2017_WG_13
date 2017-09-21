@@ -18,7 +18,9 @@ The task is to give definitions of:
 
 **Logical equivalence**
 
-```equiv :: Form -> Form -> Bool```
+``` 
+equiv :: Form -> Form -> Bool 
+```
 
 ### Assignment ###
 
@@ -67,12 +69,10 @@ tautology f = all (\ v -> evl v f) (allVals f)
 
 ```haskell
 entails :: Form -> Form -> Bool
-
-TBC
-
+entails a b = tautology (Impl a b)
 ```
 
-> From sthe sheets of the lecture:
+> From the sheets of the lecture:
 > 
 > *B logically entails A is true if and only if it is necessary that if all of the elements of B are true, then A is true.*
 > 
@@ -81,8 +81,33 @@ TBC
 
 ```haskell
 equiv :: Form -> Form -> Bool
+equiv a b = (entails a b) && (entails b a)
+```
+*Two formulas are equivalent if and only if one entails the other.*
 
-TBC
+### Checking the definitions ###
+
+I checked my definitions by feeding a number of formulas of which I kew the outcome:
+
+```haskell
+noDefinitionProblems =
+
+  contradiction (Cnj [ p, (Neg p) ])                                &&
+  tautology     (form1)                                             &&
+  entails       (Impl p (Cnj[ q, r]))   (Impl p r)                  &&
+  entails       (Impl p q)              (Impl p q)                  &&
+  entails       (Impl p q)              (Impl (Neg q) (Neg p))      &&
+  entails       (p)                     (Dsj [p,q])                 &&
+  entails       form2                   form3                       &&
+  entails       (Impl p q)              (Impl (Neg q) (Neg p))      &&
+  equiv         (Impl p q)              (Impl (Neg q) (Neg p))      
+  
+print noDefinitionProblems
+
 ```
 
+## Time ##
+
+
+Time taken 2 hours.
 

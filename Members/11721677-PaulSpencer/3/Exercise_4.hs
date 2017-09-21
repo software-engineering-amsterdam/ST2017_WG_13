@@ -4,64 +4,78 @@ import Test.QuickCheck
 import Control.Monad
 import Lecture3
 
--- Deliverables: 
--- 🗹 generator for formulas
--- ☒ sequence of test properties
--- ☒ test report
--- ☒ indication of time spent
+{-
+  commentry on this question is found on the team wiki : 
+-}
 
 instance Arbitrary Form where
-    arbitrary = sized arbForm
+    arbitrary = sized arbitraryFormulaGenerator
 
--- adapted from Quick Check A Lightweight Tool for Random Testing of Haskell Programs - 
--- Koen Claessen, John Hughes
--- https://www.st.cs.uni-saarland.de/edu/seminare/2005/advanced-fp/slides/meiser.pdf
-arbForm ::Int -> Gen Form
-arbForm 0 = propGen
-arbForm depth = frequency [
-    (2, propGen),
-    (6, negGen depth),
-    (6, implGen depth),
-    (6, equivGen depth),
-    (6, liftM Cnj (formListGenSmall depth)),
-    (6, liftM Dsj (formListGenSmall depth)),
-    (1, liftM Cnj (formListGenLarge depth)),
-    (1, liftM Dsj (formListGenLarge depth))]
+arbitraryFormulaGenerator ::RemainingOperatorCount -> LogicFormulaGenerator
+arbitraryFormulaGenerator 0 = propositionGenerator
+arbitraryFormulaGenerator max = oneof [
+    (negationGenerator max),
+    (implicationGenerator max),
+    (equivilanceGenerator max),
+    (disjunctionGenerator max),
+    (conjunctionGenerator max),
+    (propositionGenerator)]
 
-propGen:: Gen Form
-propGen = frequency [
-    (10, liftM Prop (choose (1,3))),
-    (7, liftM Prop (choose (4,7))),
-    (3, liftM Prop (choose (8,20))),
-    (1, liftM Prop (choose (20,10000)))]
+propositionGenerator:: LogicFormulaGenerator
+propositionGenerator = frequency [
+    (50, propositionGeneratorWithIdBetween 1 3),
+    (30, propositionGeneratorWithIdBetween 4 7),
+    (15, propositionGeneratorWithIdBetween 8 20),
+    (5, propositionGeneratorWithIdBetween 21 10000)]
 
-negGen :: Int -> Gen Form
-negGen depth = liftM Neg (arbForm (depth-1))
+negationGenerator :: RemainingOperatorCount -> LogicFormulaGenerator
+negationGenerator max = liftM Neg (arbitraryFormulaGenerator (max - 1))
 
-implGen :: Int -> Gen Form
-implGen depth = liftM2 Impl (arbForm (depth `div` 2)) (arbForm (depth `div` 2))
+implicationGenerator :: RemainingOperatorCount -> LogicFormulaGenerator
+implicationGenerator max = binaryLogicFormulaGenerator Impl max
 
-equivGen :: Int -> Gen Form
-equivGen depth = liftM2 Equiv (arbForm (depth `div` 2)) (arbForm (depth `div` 2))
+equivilanceGenerator :: RemainingOperatorCount -> LogicFormulaGenerator
+equivilanceGenerator max = binaryLogicFormulaGenerator Equiv max
 
-cnjGen depth = frequency [
-    (20,liftM Dsj (formListGenSmall depth)),
-    (5,liftM Dsj (formListGenLarge depth)),
-    (1,liftM Dsj (formListGenVeryLarge depth))]
+disjunctionGenerator :: RemainingOperatorCount -> LogicFormulaGenerator
+disjunctionGenerator max = listOfLogicOperatorsGenerator Dsj max
 
--- inspired by carls answer in 
--- https://stackoverflow.com/questions/25300551/multiple-arbitrary-calls-returning-same-value
-formListGenSmall::Int -> Gen [Form]
-formListGenSmall depth = oneof $ [replicateM n (arbForm (depth `div` n)) | n <- [1..3] ]
-
-formListGenLarge::Int -> Gen [Form]
-formListGenLarge depth = oneof $ [replicateM n (arbForm (depth `div` n)) | n <- [4..10] ]
-
-formListGenVeryLarge::Int -> Gen [Form]
-formListGenVeryLarge depth = oneof $ [replicateM n (arbForm (depth `div` n)) | n <- [11..50] ]
+conjunctionGenerator :: RemainingOperatorCount -> LogicFormulaGenerator
+conjunctionGenerator max = listOfLogicOperatorsGenerator Cnj max
 
 
--- Test Properties
--- 1) test if the truth tables of the input formula and the output CNF is the equivalent
+propositionGeneratorWithIdBetween::Int -> Int -> LogicFormulaGenerator
+propositionGeneratorWithIdBetween min max = liftM Prop (choose (min, max))
 
--- *(+(-1 (7<=>4) *(6 20)))
+
+binaryLogicFormulaGenerator:: BinaryLogicOperation -> RemainingOperatorCount -> LogicFormulaGenerator 
+binaryLogicFormulaGenerator binaryLogicOperation max = 
+    liftM2 binaryLogicOperation 
+        (arbitraryFormulaGenerator $ updatedMax max 2) 
+        (arbitraryFormulaGenerator $ updatedMax max 2)
+
+updatedMax::RemainingOperatorCount -> BranchCount -> RemainingOperatorCount
+updatedMax maxRemainingFormulas branchCount = maxRemainingFormulas `div` branchCount
+
+
+listOfLogicOperatorsGenerator::MultipleLogicOperation -> RemainingOperatorCount -> LogicFormulaGenerator
+listOfLogicOperatorsGenerator multipleLogicOperation max = frequency [
+    (80, liftM multipleLogicOperation (listOfLogicOperatorsGeneratorBetween max 2 3)),
+    (19, liftM multipleLogicOperation (listOfLogicOperatorsGeneratorBetween max 4 10)),
+    (1, liftM multipleLogicOperation (listOfLogicOperatorsGeneratorBetween max 11 50))]
+
+listOfLogicOperatorsGeneratorBetween::RemainingOperatorCount -> Int -> Int -> MultipleLogicFormulaGenerator
+listOfLogicOperatorsGeneratorBetween maxRemaining minLength maxLength = oneof $ 
+    [listOfLogicOperators maxRemaining actualLength | actualLength <- [minLength..maxLength] ]
+
+listOfLogicOperators::RemainingOperatorCount -> BranchCount -> MultipleLogicFormulaGenerator
+listOfLogicOperators max len = replicateM len (arbitraryFormulaGenerator (updatedMax max len))
+
+
+type LogicFormula = Form
+type LogicFormulaGenerator = Gen Form
+type MultipleLogicFormulaGenerator = Gen [Form]
+type RemainingOperatorCount = Int
+type BinaryLogicOperation = (Form -> Form -> Form)
+type MultipleLogicOperation =  [Form] -> Form
+type BranchCount = Int
