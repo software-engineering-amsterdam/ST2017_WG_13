@@ -1,16 +1,39 @@
+module Lab3 where
+import Data.List
+import System.Random
+import Test.QuickCheck
+import Lecture3
+
+--parse :: String -> [Form]
+--parse s = [ f | (f,_) <- parseForm (lexer s) ]
+
+--Test for an emty
+-- Do a loot of test
+
+--parsTester :: String -> [Form]
+testInput :: [String]
+testInput =[
+  (show form2),
+  (show form3),
+  (show (Equiv form1 form2)),
+  (show (Impl form1 form2)),
+  (show (Cnj [form1,form2,form3])),
+  (show (Dsj[form1,form2,form3])),
+  (show (Impl form2 form3)),
+  (show (Equiv form2 form3)),
+  (show (Cnj [form1,form2,form3])),
+  (show (Dsj[form1,form2,form3])),
+  "(2 + 3)",
+  "",
+  "+(2 3",
+  "*(2 3)"]
 
 
-parse (show form1)
-parse (show form2)
-parse (show form3)
+addBrack :: String -> String
+addBrack x = "["++x++"]"
 
-parse (show (Equiv form1 form2))
-parse (show (Impl form1 form2))
-parse (show (Cnj [form1,form2,form3]))
-parse (show (Dsj[form1,form2,form3]))
+parsTesterHalper :: String -> Bool
+parsTesterHalper x = (show((parse x)) == addBrack x)
 
-Impl form2 form3
-Equiv form2 form3
-
-Cnj [form1,form2,form3]
-Dsj[form1,form2,form3]
+parsTester :: [String] -> [Bool]
+parsTester x = map (parsTesterHalper) x
