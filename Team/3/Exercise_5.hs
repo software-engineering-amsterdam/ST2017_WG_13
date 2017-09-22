@@ -23,12 +23,16 @@ toClause ( Dsj list )         = map toProperty list
 toClause formTerm             = toClause $ Dsj [formTerm] 
 
 
-{- 
-    Precondition: Form in CNF (nnf and arrowfree and prop names >= 1)
--}
 toClauses :: Form -> Clauses
 toClauses ( Equiv _ _       ) = preConditionError
 toClauses ( Impl _ _        ) = preConditionError
 toClauses ( Cnj clauseList  ) = map toClause clauseList
 toClauses formTerm            = toClauses $ Cnj [formTerm]
+
+{- 
+    Precondition: Form in CNF (nnf and arrowfree and prop names >= 1)
+-}
+cnf2cls :: Form -> Clauses
+cnf2cls = toClauses
+
 
