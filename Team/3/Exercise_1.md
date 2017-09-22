@@ -81,9 +81,9 @@ entails a b = tautology (Impl a b)
 
 ```haskell
 equiv :: Form -> Form -> Bool
-equiv a b = (entails a b) && (entails b a)
+equiv a b =  tautology (Equiv a b)
 ```
-*Two formulas are equivalent if and only if one entails the other.*
+**
 
 ### Checking the definitions ###
 
