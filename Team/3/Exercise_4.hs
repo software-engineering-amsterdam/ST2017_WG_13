@@ -17,7 +17,14 @@ prop_validForm form = (head $ parse $ show form) == form
 test_validForm = verboseCheck prop_validForm
 
 -- inspired by http://www.programming-idioms.org/idiom/82/count-substring-occurrences/999/haskell
-ssc s = sum [ 1 | r <- tails s, ss <- ["-","==>","<=>","*(","+("], isPrefixOf ss r ]
+opCount s = sum [ 1 | r <- tails s, ss <- ["-","==>","<=>","*(","+("], isPrefixOf ss r ]
+
+
+-- toine -> we are randomly generating Forms, thus the Forms are no longer pure, thus we can only deal with
+-- them within the monads they are associated (in our case we are using the QuickCheck Gen Monad, other options
+-- are for example the IO monad)  you can interact with them within the context of the Gen Monad () or by using
+-- quickcheck properties you can look at then using the generate function:
+--   generate (genForm 10)
 
 
 instance Arbitrary Form where
