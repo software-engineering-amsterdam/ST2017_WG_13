@@ -63,9 +63,10 @@ comparePropertyForList xs p q =
   
 quicksort' :: (Num a, Enum a) => [a] -> [(a1, a -> Bool)] -> [(a1, a -> Bool)]
 quicksort' domain []     =  []
-quicksort' domain (x:xs) =  quicksort' domain [ a | a <- xs, comparePropertyForList domain (snd x) (snd a)  == Equivalent  ] 
-                     ++
+quicksort' domain (x:xs) =  
                      quicksort' domain [ a | a <- xs, comparePropertyForList domain (snd x) (snd a)  == Stronger  ] 
+                     ++
+                     quicksort' domain [ a | a <- xs, comparePropertyForList domain (snd x) (snd a)  == Equivalent  ] 
                      ++
                      [x]                       
                      ++ 
