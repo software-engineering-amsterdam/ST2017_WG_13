@@ -79,3 +79,16 @@ type RemainingOperatorCount = Int
 type BinaryLogicOperation = (Form -> Form -> Form)
 type MultipleLogicOperation =  [Form] -> Form
 type BranchCount = Int
+
+-- 1) get a random number (gen 1) (gen 2) (gen 2 -> 50)
+-- 2) distribute that number across a list
+-- 3) Gen [Form]
+-- 4) Gen Fom 
+
+-- data Form = Prop Name
+-- | Neg  Form
+-- | Cnj [Form]
+-- | Dsj [Form]
+-- | Impl Form Form 
+-- | Equiv Form Form 
+-- deriving (Eq,Ord)

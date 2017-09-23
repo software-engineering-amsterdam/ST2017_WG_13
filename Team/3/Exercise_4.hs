@@ -1,31 +1,30 @@
-module Lab3 where
+module Exercise_4 where
 import Data.List
 import Test.QuickCheck
-import Control.Monad
 import Lecture3
+import Exercise_1
+import Exercise_3
 
--- Deliverables: 
--- 🗹 generator for formulas
--- ☒ sequence of test properties
--- ☒ test report
--- ☒ indication of time spent
+{-
+    see wiki for notes :
+-}
+-- test generator
+opCount ops s = sum [ 1 | r <- tails s, ss <-ops , isPrefixOf ss r ]
 
--- test of generator
--- 1 formula parses: generator provides valid formulas
+genProp_validOpCount = do
+    s <- choose (0,10000)
+    form <- formGen s
+    return ((opCount ["-","==>","<=>","*(","+("] $ show form) == s) 
+test_ValidOpCount = verboseCheck $ forAll genProp_validOpCount (==True)
 
 prop_validForm form = (head $ parse $ show form) == form
 test_validForm = verboseCheck prop_validForm
 
--- inspired by http://www.programming-idioms.org/idiom/82/count-substring-occurrences/999/haskell
-opCount s = sum [ 1 | r <- tails s, ss <- ["-","==>","<=>","*(","+("], isPrefixOf ss r ]
+-- test cnf converter
+prop_validCnfConversion form = equiv form (cnfGenerator form)
+test_validCnfConversion = verboseCheck prop_validCnfConversion
 
-
--- toine -> we are randomly generating Forms, thus the Forms are no longer pure, thus we can only deal with
--- them within the monads they are associated (in our case we are using the QuickCheck Gen Monad, other options
--- are for example the IO monad)  you can interact with them within the context of the Gen Monad () or by using
--- quickcheck properties you can look at then using the generate function:
---   generate (genForm 10)
-
+-- implementation
 
 instance Arbitrary Form where
     arbitrary = sized formGen
