@@ -10,58 +10,86 @@ import Lecture3
 -- ☒ test report
 -- ☒ indication of time spent
 
+-- test of generator
+-- 1 formula parses: generator provides valid formulas
+
+prop_validForm form = (head $ parse $ show form) == form
+test_validForm = verboseCheck prop_validForm
+
+-- inspired by http://www.programming-idioms.org/idiom/82/count-substring-occurrences/999/haskell
+ssc s = sum [ 1 | r <- tails s, ss <- ["-","==>","<=>","*(","+("], isPrefixOf ss r ]
+
+
 instance Arbitrary Form where
-    arbitrary = sized arbForm
+    arbitrary = sized formGen
 
--- adapted from Quick Check A Lightweight Tool for Random Testing of Haskell Programs - 
--- Koen Claessen, John Hughes
--- https://www.st.cs.uni-saarland.de/edu/seminare/2005/advanced-fp/slides/meiser.pdf
-arbForm ::Int -> Gen Form
-arbForm 0 = propGen
-arbForm depth = frequency [
-    (2, propGen),
-    (6, negGen depth),
-    (6, implGen depth),
-    (6, equivGen depth),
-    (6, liftM Cnj (formListGenSmall depth)),
-    (6, liftM Dsj (formListGenSmall depth)),
-    (1, liftM Cnj (formListGenLarge depth)),
-    (1, liftM Dsj (formListGenLarge depth))]
+formGen ::Int -> Gen Form
+formGen s 
+    | s <= 0    = propGen
+    | s == 1    = negGen s
+    | otherwise =  do
+        arity <- arityGen
+        frm <- (case arity of
+                One -> negGen s
+                Two -> imEqGen s
+                Many -> cjDjGen s)
+        return frm
 
-propGen:: Gen Form
-propGen = frequency [
-    (10, liftM Prop (choose (1,3))),
-    (7, liftM Prop (choose (4,7))),
-    (3, liftM Prop (choose (8,20))),
-    (1, liftM Prop (choose (20,10000)))]
+propGen::Gen Form
+propGen = do
+    id <- propIdGen
+    return (Prop id)
 
-negGen :: Int -> Gen Form
-negGen depth = liftM Neg (arbForm (depth-1))
+negGen:: Int -> Gen Form
+negGen s = do
+    fs <- formDistributionGen s 1
+    return (Neg (head fs))
 
-implGen :: Int -> Gen Form
-implGen depth = liftM2 Impl (arbForm (depth `div` 2)) (arbForm (depth `div` 2))
+imEqGen:: Int -> Gen Form
+imEqGen s = do
+    fs <- formDistributionGen s 2
+    ctor <- elements [Impl, Equiv]
+    return (ctor (head fs) (last fs))
 
-equivGen :: Int -> Gen Form
-equivGen depth = liftM2 Equiv (arbForm (depth `div` 2)) (arbForm (depth `div` 2))
+cjDjGen:: Int -> Gen Form
+cjDjGen s = do
+        len <- lenGen 
+        fs <- formDistributionGen s len
+        ctor <- elements [Dsj, Cnj]
+        return (ctor fs)
 
-cnjGen depth = frequency [
-    (20,liftM Dsj (formListGenSmall depth)),
-    (5,liftM Dsj (formListGenLarge depth)),
-    (1,liftM Dsj (formListGenVeryLarge depth))]
+formDistributionGen:: Int -> Int -> Gen [Form]
+formDistributionGen s len = fdg (s-1) len
+    where
+        fdg s' 1 = do
+            f <- formGen s'
+            return [f]  
+        fdg s' len' = do
+            rn <- boundedDistributionGen s' len'
+            fs <- fdg (s'- rn) (len'-1)
+            f <- formGen rn
+            return (f : fs)
 
--- inspired by carls answer in 
--- https://stackoverflow.com/questions/25300551/multiple-arbitrary-calls-returning-same-value
-formListGenSmall::Int -> Gen [Form]
-formListGenSmall depth = oneof $ [replicateM n (arbForm (depth `div` n)) | n <- [1..3] ]
+boundedDistributionGen::Int -> Int -> Gen Int
+boundedDistributionGen num len = do
+    rn <- choose (0, num)
+    rd <- choose (1, len) 
+    return (rn `div` rd)
 
-formListGenLarge::Int -> Gen [Form]
-formListGenLarge depth = oneof $ [replicateM n (arbForm (depth `div` n)) | n <- [4..10] ]
+data Arity = One | Two | Many
 
-formListGenVeryLarge::Int -> Gen [Form]
-formListGenVeryLarge depth = oneof $ [replicateM n (arbForm (depth `div` n)) | n <- [11..50] ]
+arityGen::Gen Arity
+arityGen = elements [One, Two, Two, Many, Many]
 
+propIdGen::Gen Int
+propIdGen = frequency [
+    (60, choose(1, 3)),
+    (30, choose(4, 7)),
+    (9, choose(8, 20)),
+    (1, choose(21, 10000000))]
 
--- Test Properties
--- 1) test if the truth tables of the input formula and the output CNF is the equivalent
-
--- *(+(-1 (7<=>4) *(6 20)))
+lenGen::Gen Int
+lenGen = frequency [
+    (90, choose(2, 3)),
+    (9, choose(4, 10)),
+    (1, choose(11, 50))]
