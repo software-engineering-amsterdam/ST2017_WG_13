@@ -1,4 +1,4 @@
-module Lab2_Exercise3 where
+module Exercise_3 where
   
 {-
 ------------------------------------------------------------------

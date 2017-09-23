@@ -1,4 +1,4 @@
-module Lab1_Exercise8 where
+module Exercise_8 where
 
 import Data.List 
 

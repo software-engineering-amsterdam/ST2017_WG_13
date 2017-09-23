@@ -1,4 +1,4 @@
-module Lab3_Exercise5 where
+module Exercise_5 where
   
 import Lecture3
 

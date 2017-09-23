@@ -1,4 +1,4 @@
-module Lab1_Exercise5 where
+module Exercise_5 where
   
 sieve::[Integer] -> [Integer]
 sieve (p:xs)  = p: sieve [x | x <- xs, x `mod` p /=0]
