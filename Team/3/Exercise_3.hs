@@ -20,8 +20,10 @@ module Exercise_3 where
     valsToForm :: [Valuation] -> Form
     valsToForm  =  Cnj . map valToForm 
 
-    cnf :: Form -> Form
-    cnf f = valsToForm $ falseValuations f
+    -- Optimised for Tautologies, see "Exercise_3.md"
+    formToCnf :: Form -> Form
+    formToCnf form | tautology form = Dsj []
+                   | otherwise      = valsToForm $ falseValuations form 
 
     --- Testing Procedure ---
 
@@ -37,6 +39,11 @@ module Exercise_3 where
     --- Form List to test On ---
     testInput :: [Form]
     testInput = [
+      form1,
+      form2,
+      form3,
+      Cnj[a,Neg a],
+      Dsj[a,Neg a],
       Dsj[a],
       Cnj[b],
       Dsj[a,b],
@@ -49,10 +56,10 @@ module Exercise_3 where
       ]    
 
     cnfTest :: Form -> Bool
-    cnfTest x = equiv x (cnf x)
+    cnfTest x = equiv x (formToCnf x)
 
     --- Run showing the resulting cnf forms of the testInput forms ---
-    detailedRun = map cnf testInput
+    detailedRun = map formToCnf testInput
 
     --- Run showing only the truth value of the comparison of the form and its cnf conversion ---
     run = map cnfTest testInput
