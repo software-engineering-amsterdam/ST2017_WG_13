@@ -20,10 +20,10 @@ module Exercise_3 where
     valsToForm :: [Valuation] -> Form
     valsToForm  =  Cnj . map valToForm 
 
-    -- Optimised for Tautologies, see "Exercise_3.md"
+    -- Optimised for Contradictions, see "Exercise_3.md"
     formToCnf :: Form -> Form
-    formToCnf form | tautology form = Cnj []
-                   | otherwise      = valsToForm $ falseValuations form 
+    formToCnf form | contradiction form = Dsj []
+                   | otherwise          = valsToForm $ falseValuations form 
 
     --- Testing Procedure ---
 
