@@ -1,37 +1,58 @@
 module Exercise_3 where
-import Data.List
-import Lecture3
-import Test.QuickCheck
+    import Data.List
+    import Lecture3
+    import Test.QuickCheck
+    
+    import Exercise_1
+    
+    truthTable :: Form -> [Valuation]
+    truthTable f = allVals f
+    
+    falseValuations :: Form -> [Valuation]
+    falseValuations formula = [ row | row <- truthTable formula, not (evl row formula) ]
+    
+    valToProp :: (Name, Bool) -> Form
+    valToProp (name, bool) = if bool then (Neg (Prop name)) else (Prop name)
+    
+    valToForm :: Valuation -> Form
+    valToForm valuation = Dsj [ valToProp x | x <- valuation ]
+    
+    valsToForm :: [Valuation] -> Form
+    valsToForm  =  Cnj . map valToForm 
 
-infix 1 -->
-(-->) :: Bool -> Bool -> Bool
-p --> q = (not p) || q
+    cnf :: Form -> Form
+    cnf f = valsToForm $ falseValuations f
 
-forall :: [a] -> (a -> Bool) -> Bool
-forall = flip all
+    --- Testing Procedure ---
 
--- Q3
-{-
-nnf (Prop x) = Prop x
-nnf (Neg (Prop x)) = Neg (Prop x)
-nnf (Neg (Neg f)) = nnf f
-nnf (Cnj fs) = Cnj (map nnf fs)
-nnf (Dsj fs) = Dsj (map nnf fs)
-nnf (Neg (Cnj fs)) = Dsj (map (nnf.Neg) fs)
-nnf (Neg (Dsj fs)) = Cnj (map (nnf.Neg) fs)
--}
+    --- Create List of Properties ---
+    a = Prop 1
+    b = Prop 2
+    c = Prop 3
+    d = Prop 4
+    e = Prop 5
+    g = Prop 6
+    
 
-cnfGenerator :: Form -> Form
-cnfGenerator = cnf . nnf . arrowfree 
+    --- Form List to test On ---
+    testInput :: [Form]
+    testInput = [
+      Dsj[a],
+      Cnj[b],
+      Dsj[a,b],
+      Cnj[a,b,c,d,e,g],
+      Impl a b,
+      Impl b a,
+      Equiv c d,
+      Dsj[Impl a b, Impl c d],
+      Impl (Cnj [a]) (Dsj[b,c,d])
+      ]    
 
+    cnfTest :: Form -> Bool
+    cnfTest x = equiv x (cnf x)
 
-cnf :: Form -> Form
-cnf (Prop x) = Prop x
-cnf (Neg (Prop x)) = Neg (Prop x)
+    --- Run showing the resulting cnf forms of the testInput forms ---
+    detailedRun = map cnf testInput
 
-cnf (Dsj [f, Cnj [p,q]]) = Cnj [ Dsj [cnf f, cnf p], Dsj [cnf f, cnf q] ]
-
-cnf (Dsj [Cnj [p,q], f]) = cnf (Dsj [f, Cnj [p,q]])
-
-cnf (Cnj fs) = Cnj (map cnf fs)
-cnf (Dsj fs) = Dsj (map cnf fs)
+    --- Run showing only the truth value of the comparison of the form and its cnf conversion ---
+    run = map cnfTest testInput
