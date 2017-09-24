@@ -1,4 +1,4 @@
-module Lab3 where
+module Exercise_4 where
 import Data.List
 import Test.QuickCheck
 import Control.Monad

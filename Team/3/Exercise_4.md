@@ -1,54 +1,51 @@
 # Exercise 4 #
-Total Time spent 8 hours - re-wrote multiple times
+Total time spent 8 hours - re-wrote multiple times, mainly die to getting obsessed with making it arbitrarily unbalanced, whilst retaining control of test sample size.
 
 ## Specifications of problem ##
 
-To create automated tests using QuickCheck (or other method) to test that the CNF convertor is generating a logic formula in Conjunctive Normal Form that is logically equivalent to the input formula that it is converting.
-
-To Test for logical equivalence we will use the equiv function that was generated in Exercise 1 to test that an arbitrarily generated formula is equivalent to the output of the CNF convertor created in Exercise 3.
+To create automated tests, using QuickCheck or other methods), to test that the CNF convertor, created in exercise 3, is generating a logic formula in Conjunctive Normal Form that is logically equivalent to an arbritary input formula.
 
 ## Specifications of generator ##
 We chose to use QuickCheck to do our automated testing.  
-A prerequesite of using QuickCheck on a Type is that the Type you are testing implements the Arbitrary class.
 
-The generation of a Formula is similar to the generation of a tree, as it is recursive. Koen and Hughes warn of the danger of recursive Type generation in their paper : Quick Check A Lightweight Tool for Random Testing of Haskell Programs, by Koen Claessen, John Hughes, specifically the section 3.2 Generators for User-Defined Types
+A prerequesite of using QuickCheck on a User Defined Type is that the type being tested must implements the Arbitrary class.
+
+The generation of a Formula is similar to the generation of a tree, as it is recursive. Claessen and Hughes warn of the risks of generating arbritary recursive User Defined Type  in their paper : Quick Check A Lightweight Tool for Random Testing of Haskell Programs, by Koen Claessen, John Hughes, specifically the section 3.2 Generators for User-Defined Types
 https://www.eecs.northwestern.edu/~robby/courses/395-495-2009-fall/quick.pdf.
 
-We disagreed with the solution of Hughes and Claessen, specifically because they are generating a balanced tree. We decided to make our formula unbalanced to more realistically reflect real formulas.
+For our tests we would like to generate an arbitary length formula, with an arbitrary distribution of operators, depth and balance.
 
-For our tests we would like to generate an arbitary length formula. 
 The functional specifications for this are that the formula should:
 * Contain at least one proposition
-* Contains zero or more of 
+* Contains zero or more of the operators
     * negation
     * implication
     * equivalance
     * disjunction
-    * proposition
-* There can be many different proposition names, but there should be a bias for names repeating
-* There can be lots of items in a conjunction or disjunction, but there should be a bias towards shorter deeper trees, which implies a bias towards shorter lists of disjunctions.
-* the formula can be arbitrarily balanced.
+    * conjunction
+* There can be many different proposition names, but there should be a bias for propositions turning up multiple times in a formula.
+* There can be multiple formulas witin a conjunction or disjunction, with at least 2. We have a preferecnce for shorter, deeper trees, which, in turn, implies a bias towards shorter lists of formulas.
+* The formula should be arbitrarily ballanced.
 
-The non-functional specifications for this are that the formula should:
-* Terminate
+The non-functional specifications for this is that the formula should Terminate
 
 ## Program ##
 
-In order for quickcheck to generate tests for a type, that type has to implement the class Arbitrary, which has the arbritary function which returns an arbritary value of the type. It is noted in the Claessen, Hughes paper that one should be carefull with recursive types to limit the chance of an infinite recursion.  The mechanism we use for this is QuickChecks' `sized` function. we use the input of sized as a terminating reducer for our User-Defined Type generator:  `formGen`.
+In order for quickcheck to generate tests for a type, that type has to implement the class `Arbitrary`, which has the `arbritary` function which returns an arbritary value of the type. 
+
+It is noted in the Claessen and Hughes paper that one should be carefull with recursive USer Defined Types to exclude the chance of an infinite recursion.  The mechanism we use for this is QuickChecks' `sized` function. We use the input from sized as a terminating reducer for our User Defined Type generator:  `formGen`.
 
 ````haskell
 instance Arbitrary Form where
     arbitrary = sized formGen
 ````
 
-#### formula generator
-first we create a generator that will terminate formula branches with proposition leaves.   
+#### Formula generator
+First we create a generator that will generate the formula as a tree like stucture, and terminate formula branches with propositions as the leaves. This happens when there are no more remaining operators on the formula branch as indicated by the arguement `s`.
 
-When the remaining operators on a branch has reached zero then the formulas branch is terminated with a proposition.
+If there is one operator remaining then the negation operator has to be selected as it is the only unary operator.
 
-if there is one operator then the negation operator is used as it is the only operator that uses one operator.
-
-in other cases we arbitrarily choose a generator of the next operator.  To do this we generate an arity of the next operator.  We chose to do this, because the profile of the different opreators is different dependant on their arity, for example Neg has an arity of one and takes a single argument, Impl and Equiv take to arguments, whereas Cnj and Dsj can have flexible arities, and thus to simulate this take a list as an arguement.
+In other cases we arbitrarily choose a generator of the next operator.  To do this we generate an arbitrary arity and use that to select the next operator type.  We chose to do this, because the signature of the different operators differs dependant on their arity, for example Neg has an arity of one and takes a single argument, Impl and Equiv take two arguments, whereas Cnj and Dsj can have flexible arities, and thus, to simulate this, they take a list as an arguement.
 
 ````haskell
 formGen ::Int -> Gen Form
