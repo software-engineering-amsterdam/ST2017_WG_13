@@ -3,17 +3,17 @@ Total time spent 8 hours - re-wrote multiple times, mainly die to getting obsess
 
 ## Specifications of problem ##
 
-To create automated tests, using QuickCheck or other methods), to test that the CNF convertor, created in exercise 3, is generating a logic formula in Conjunctive Normal Form that is logically equivalent to an arbritary input formula.
+To create automated tests, using QuickCheck or other methods), to test that the CNF convertor, created in exercise 3, is generating a logic formula in Conjunctive Normal Form that is logically equivalent to an arbitrary input formula.
 
 ## Specifications of generator ##
 We chose to use QuickCheck to do our automated testing.  
 
-A prerequesite of using QuickCheck on a User Defined Type is that the type being tested must implements the Arbitrary class.
+A prerequisite of using QuickCheck on a User Defined Type is that the type being tested must implements the Arbitrary class.
 
-The generation of a Formula is similar to the generation of a tree, as it is recursive. Claessen and Hughes warn of the risks of generating arbritary recursive User Defined Type  in their paper : Quick Check A Lightweight Tool for Random Testing of Haskell Programs, by Koen Claessen, John Hughes, specifically the section 3.2 Generators for User-Defined Types
+The generation of a Formula is similar to the generation of a tree, as it is recursive. Claessen and Hughes warn of the risks of generating arbitrary recursive User Defined Type  in their paper : Quick Check A Lightweight Tool for Random Testing of Haskell Programs, by Koen Claessen, John Hughes, specifically the section 3.2 Generators for User-Defined Types
 https://www.eecs.northwestern.edu/~robby/courses/395-495-2009-fall/quick.pdf.
 
-For our tests we would like to generate an arbitary length formula, with an arbitrary distribution of operators, depth and balance.
+For our tests we would like to generate an arbitary length formula, with an arbitrary  distribution of operators, depth and balance.
 
 The functional specifications for this are that the formula should:
 * Contain at least one proposition
