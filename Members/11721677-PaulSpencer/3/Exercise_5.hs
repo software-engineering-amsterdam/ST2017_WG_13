@@ -3,6 +3,26 @@ import Lecture3
 import Exercise_4
 import Test.QuickCheck
 
+type Clause  = [Int]
+type Clauses = [Clause]
+  
+cnf2cls::Form -> Clauses
+cnf2cls (Prop x) = [[x]]
+cnf2cls (Neg (Prop x)) = [[(x*(-1))]]
+cnf2cls (Dsj fs) = (concat $ concat $ map cnf2cls fs):[]
+cnf2cls (Cnj fs) = (concat $ map cnf2cls fs)
+
+toProp n 
+    | n < 0 = Neg (Prop (abs n))
+    | otherwise = Prop n
+
+cls2forms cs = Cnj (map (\fs -> Dsj ((map toProp) fs)) cs)
+
+prop_equivalent form = (cnf form) `equiv` (cls2forms $ cnf2cls $ cnf form)
+test_equivalent = verboseCheck prop_equivalent
+
+
+
 {-taken from Ex3-}
 fvs :: Form -> [Valuation]
 fvs formula = [ row | row <- allVals formula, not (evl row formula) ]
@@ -24,21 +44,6 @@ tautology f = all (\ v -> evl v f) (allVals f)
 equiv :: Form -> Form -> Bool
 equiv a b = tautology (Equiv a b )
 {--}
-
-type Clause  = [Int]
-type Clauses = [Clause]
-  
-cnf2cls::Form -> Clauses
-cnf2cls (Prop x) = [[x]]
-cnf2cls (Neg (Prop x)) = [[(x*(-1))]]
-cnf2cls (Dsj fs) = (concat $ concat $ map cnf2cls fs):[]
-cnf2cls (Cnj fs) = (concat $ map cnf2cls fs)
-
-toProp n 
-    | n < 0 = Neg (Prop (abs n))
-    | otherwise = Prop n
-
-cls2forms cs = Cnj (map (\fs -> Dsj ((map toProp) fs)) cs)
 
 {-simple tests used whilst building-}
 f0 = Prop 1
@@ -65,9 +70,3 @@ testF2C = map cnf2cls [f0,f1,f2,f3,f4] == [c0,c1,c2,c3,c4]
 testC2F = map cls2forms [c0,c1,c2,c3] == [f0',f1',f2',f3'] 
 
 --  could try to build an SAT evaluator, but instead we will just return it to Form
-
-
-{-Tests-}
-prop_equivalent form = (cnf form) `equiv` (cls2forms $ cnf2cls $ cnf form)
---  +(+(14 9 1 4092 11 3 3 5) (4<=>-1))
-{-end Tests-}
