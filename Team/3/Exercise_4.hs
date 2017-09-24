@@ -6,9 +6,10 @@ import Exercise_1
 import Exercise_3
 
 {-
-    see wiki for notes :
+    all notes for this are available at: 
+    https://github.com/software-engineering-amsterdam/ST2017_WG_13/blob/master/Team/3/Exercise_4.md
 -}
--- test generator
+
 opCount ops s = sum [ 1 | r <- tails s, ss <-ops , isPrefixOf ss r ]
 
 genProp_validOpCount = do
@@ -20,11 +21,8 @@ test_ValidOpCount = verboseCheck $ forAll genProp_validOpCount (==True)
 prop_validForm form = (head $ parse $ show form) == form
 test_validForm = verboseCheck prop_validForm
 
--- test cnf converter
-prop_validCnfConversion form = equiv form (cnfGenerator form)
+prop_validCnfConversion form = equiv form (formToCnf form)
 test_validCnfConversion = verboseCheck prop_validCnfConversion
-
--- implementation
 
 instance Arbitrary Form where
     arbitrary = sized formGen

@@ -121,6 +121,8 @@ boundedDistributionGen num len = do
     return (rn `div` rd)
 ````
 
+Why is this important? the importance of reflecting real life is in the behaviour of developers. If the "arbitrary" generated type has a balanced structure as in the Claasen and Hughes paper, or heavily skewed distribution, e.g. taking one from remaining nodes at the beginning of a conjunction or disjunction, leading to a front heavy balance of the generated formula, then when programmers see that their algorithm that is consuming the generated type is slow, they will optimize for the performance for the balance of the represenation.  lets say a developer has optimized for a front heavy tree at the cost of a back heavy tree, then the developers tests will be great, but reality might disagree.
+
 #### negation generator
 We generate a list that randomly distributes the remaining operatots over a list of size 1, and take the first item.
 
