@@ -28,9 +28,9 @@ As a test generator, we used the offspring of exercise 4 and fed that into the C
 
 ```
 prop_equivalent :: Form -> Bool
-prop_equivalent form = (formToCnf form) `equiv`
-								 (cls2form $ cnf2cls $ 
-												formToCnf form)
+prop_equivalent form = (formToCnf form)
+                       `equiv`
+                       (cls2form $ cnf2cls $ formToCnf form)
 ```
 
 ## Time ##
