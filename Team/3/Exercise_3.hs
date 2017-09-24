@@ -22,7 +22,7 @@ module Exercise_3 where
 
     -- Optimised for Tautologies, see "Exercise_3.md"
     formToCnf :: Form -> Form
-    formToCnf form | tautology form = Dsj []
+    formToCnf form | tautology form = Cnj []
                    | otherwise      = valsToForm $ falseValuations form 
 
     --- Testing Procedure ---
