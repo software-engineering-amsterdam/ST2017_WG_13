@@ -5,6 +5,11 @@ module Exercise_3 where
     
     import Exercise_1
     
+{- 
+   For notes on this exercise see:
+   https://github.com/software-engineering-amsterdam/ST2017_WG_13/blob/master/Team/3/Exercise_3.md
+-}
+
     truthTable :: Form -> [Valuation]
     truthTable f = allVals f
     

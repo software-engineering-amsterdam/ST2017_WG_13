@@ -8,9 +8,10 @@ import Exercise_1
 import Exercise_3
 import Exercise_4
 
-normalForm :: Form -> Form
-normalForm = (nnf.arrowfree) 
-
+{- 
+   For notes on this exercise see:
+   https://github.com/software-engineering-amsterdam/ST2017_WG_13/blob/master/Team/3/Exercise_5.md
+-}
 
 type Clause  = [ Int    ]
 type Clauses = [ Clause ]
