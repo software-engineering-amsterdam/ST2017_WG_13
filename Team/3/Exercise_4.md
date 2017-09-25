@@ -1,5 +1,5 @@
 # Exercise 4 #
-Total time spent 8 hours - re-wrote multiple times, mainly die to getting obsessed with making it arbitrarily unbalanced, whilst retaining control of test sample size.
+Total time spent 8 hours - re-wrote multiple times, mainly due to getting obsessed with making it arbitrarily unbalanced, whilst retaining control of test sample size.
 
 ## Specifications of problem ##
 
@@ -13,27 +13,27 @@ A prerequisite of using QuickCheck on a User Defined Type is that the type being
 The generation of a Formula is similar to the generation of a tree, as it is recursive. Claessen and Hughes warn of the risks of generating arbitrary recursive User Defined Type  in their paper : Quick Check A Lightweight Tool for Random Testing of Haskell Programs, by Koen Claessen, John Hughes, specifically the section 3.2 Generators for User-Defined Types
 https://www.eecs.northwestern.edu/~robby/courses/395-495-2009-fall/quick.pdf.
 
-For our tests we would like to generate an arbitary length formula, with an arbitrary  distribution of operators, depth and balance.
+For our tests, we would like to generate an arbitrary length formula, with an arbitrary  distribution of operators, depth and balance.
 
 The functional specifications for this are that the formula should:
 * Contain at least one proposition
 * Contains zero or more of the operators
     * negation
     * implication
-    * equivalance
+    * equivalence
     * disjunction
     * conjunction
 * There can be many different proposition names, but there should be a bias for propositions turning up multiple times in a formula.
-* There can be multiple formulas witin a conjunction or disjunction, with at least 2. We have a preferecnce for shorter, deeper trees, which, in turn, implies a bias towards shorter lists of formulas.
+* There can be multiple formulas within a conjunction or disjunction, with at least 2. We prefer shorter, deeper trees, which, in turn, implies a bias towards shorter lists of formulas.
 * The formula should be arbitrarily ballanced.
 
 The non-functional specifications for this is that the formula should Terminate
 
 ## Program ##
 
-In order for quickcheck to generate tests for a type, that type has to implement the class `Arbitrary`, which has the `arbritary` function which returns an arbritary value of the type. 
+For QuickCheck to generate tests for a type, that type has to implement the class `Arbitrary`, which has the `arbitrary` function which returns an arbitrary value of the type. 
 
-It is noted in the Claessen and Hughes paper that one should be carefull with recursive USer Defined Types to exclude the chance of an infinite recursion.  The mechanism we use for this is QuickChecks' `sized` function. We use the input from sized as a terminating reducer for our User Defined Type generator:  `formGen`.
+It is noted in the Claessen and Hughes paper that one should be careful with recursive User Defined Types to exclude the chance of an infinite recursion.  The mechanism we use for this is QuickChecks' `sized` function. We use the input from sized as a terminating reducer for our User Defined Type generator:  `formGen`.
 
 ````haskell
 instance Arbitrary Form where
@@ -41,11 +41,11 @@ instance Arbitrary Form where
 ````
 
 #### Formula generator
-First we create a generator that will generate the formula as a tree like stucture, and terminate formula branches with propositions as the leaves. This happens when there are no more remaining operators on the formula branch as indicated by the arguement `s`.
+First, we create a generator that will generate the formula as a tree like stucture, and terminate formula branches with propositions as the leaves. This happens when there are no more remaining operators on the formula branch as indicated by the argument `s`.
 
-If there is one operator remaining then the negation operator has to be selected as it is the only unary operator.
+If there is one operator remaining then the negation operator must be selected as it is the only unary operator.
 
-In other cases we arbitrarily choose a generator of the next operator.  To do this we generate an arbitrary arity and use that to select the next operator type.  We chose to do this, because the signature of the different operators differs dependant on their arity, for example Neg has an arity of one and takes a single argument, Impl and Equiv take two arguments, whereas Cnj and Dsj can have flexible arities, and thus, to simulate this, they take a list as an arguement.
+In other cases, we arbitrarily choose a generator of the next operator.  To do this we generate an arbitrary arity and use that to select the next operator type.  We chose to do this, because the signature of the different operators differs dependant on their arity, for example Neg has an arity of one and takes a single argument, Impl and Equiv take two arguments, whereas Cnj and Dsj can have flexible arities, and thus, to simulate this, they take a list as an argument.
 
 ````haskell
 formGen ::Int -> Gen Form
@@ -61,7 +61,7 @@ formGen s
         return frm
 ````
 
-The arity generator takes into account that there are different number of operators in each of the arity goups.
+The arity generator considers that there are different number of operators in each of the arity groups.
 
 ````haskell
 data Arity = One | Two | Many
@@ -71,9 +71,9 @@ arityGen = elements [One, Two, Two, Many, Many]
 ````
 
 #### proposition generator
-propositions have identifiers that are of type Name which is a reTyping of Int.  Whilst we would like to check a wide variety of Ints, it is important that they are positive, as negative Names will interfere with the parsing, a parser will not be able to tell if the negative Name is "-1" or if it is a negation of the Name 1.  It was also important that we had a bias towards multiple occurences of similar Names in the formula. 
+propositions have identifiers that are of type Name which is a reTyping of Int.  Whilst we would like to check a wide variety of Ints, it is important that they are positive, as negative Names will interfere with the parsing, a parser will not be able to tell if the negative Name is "-1" or if it is a negation of the Name 1.  It was also important that we had a bias towards multiple occurrences of similar Names in the formula. 
 
-To achieve this Bias we used QuickChecks frequency function in the following code we have biased that 60/100 of times quickcheck will choose a name for a proposition of 1,2 or 3, 30/100 times between 4 and 7, 9/100 times between 8 and 20 and the remaining 1/100 times some larger number. 
+To achieve this bias, we used QuickChecks frequency function in the following code we have biased that 60/100 of times quickcheck will choose a name for a proposition of 1,2 or 3, 30/100 times between 4 and 7, 9/100 times between 8 and 20 and the remaining 1/100 times some larger number. 
 
 ````haskell
 
@@ -93,13 +93,14 @@ propIdGen = frequency [
 #### distributing remaining operators
 The following code is used by all the remaining generators, thus we will explain it here.
 
-Suppose you have a recursive branching algorithm that you wish to end. To end it you give it a terminating value of 5. On each operand you reduce the value by 1. If your algorithm branches with only operand (e.g. Neg), then the total number of proposition would be 5. If your branch only had 2 operand operations at each branch the count would reduce by 1 but the number of brances doubles thus you would have 101 propositions ((1*5)+(2*4)+(3*8)+(2*16)+(1*32)).  This explosion is even bigger when considering that conjunctions and disjunctions can contain a very large number of operators.
+Suppose you have a recursive branching algorithm that you wish to end. To end it you give it a terminating value of 5. On each operator you reduce the value by 1. If your algorithm branches with only operand (e.g. Neg), then the total number of proposition would be 5. If your branch only had 2 operand operations at each branch the count would reduce by 1 but the number of branches doubles thus you would have 101 propositions ((1*5)+(2*4)+(3*8)+(2*16)+(1*32)).  This explosion is even bigger when considering that conjunctions and disjunctions can contain a very large number of operators.
 
-The solution that Claessen and Hughes propose is to use `s div 2` on the number of operations, an a binary branch (and presumably `s div n` on a branch with an arity of n).  We find this unsatisfactory for 2 reasons. Firstly there is information loss.  At every uneven division, one operand is thrown away, thus if you use this method expecting to have 31 operations you would have 31 operations, however if you expect 32 operations you get 63 operations. This lack of control over input and output is not desired
+The solution that Claessen and Hughes propose is to use `s div 2` on the number of operations, on a binary branch (and presumably `s div n` on a branch with an arity of n).  We find this unsatisfactory for 2 reasons. Firstly, there is information loss.  At every uneven division, one operand is thrown away, thus if you use this method expecting to have 31 operations you would have 31 operations, however if you expect 32 operations you get 63 operations. This lack of control over input and output is not desired
 
-More importantly this does not reflect the real world.  Equasions can be bothed balanced and unbalanced, thus at we would like to arbtirarly distribute the remaining operators (i.e. current remaining -1) accross the branches.  With Neg this does not matter as we can only distribute across  one branch. lets say we wanted to distribute 4 remaining operators across 2 branches, we could distribute them (l, r)=[(0,4),(1,3),(2,2),(1,3),(0,4)], where (2,2) would be balanced as Claessen and Hughes suggest, this would leave 4 options unexplored. a zero would indicate that the next item in the formula is a proposition.  
-Distributing across a pair is relatively simple, pick a random number between 0 and the remaining operators, for one side and remove that value from the total for the other.  however distributing across a list recursivly using the above method skews the number of operands across the list, thus it is necessary to divide the random number generated by a random number between 1 and the remaining size of the list, see `boundedDistributionGen`, to allow values to distribute evenly across the list. 
-naturally before you do all this you should reduce the reamining operators by 1.
+More importantly this does not reflect the real world.  Equations can be both balanced and unbalanced, thus at we would like to arbitrarily distribute the remaining operators (i.e. current remaining -1) across the branches.  With Neg this does not matter as we can only distribute across  one branch. lets say we wanted to distribute 4 remaining operators across 2 branches, we could distribute them (l, r)=[(0,4),(1,3),(2,2),(1,3),(0,4)], where (2,2) would be balanced as Claessen and Hughes suggest, this would leave 4 options unexplored. a zero would indicate that the next item in the formula is a proposition.  
+
+Distributing across a pair is relatively simple, pick a random number between 0 and the remaining operators, for one side and remove that value from the total for the other.  However, distributing across a list recursively using the above method skews the number of operands across the list, thus it is necessary to divide the random number generated by a random number between 1 and the remaining size of the list, see `boundedDistributionGen`, to allow values to distribute evenly across the list. 
+Naturally, before you do all this you should reduce the remaining operators by 1.
 
 ````haskell
 formDistributionGen:: Int -> Int -> Gen [Form]
@@ -121,10 +122,10 @@ boundedDistributionGen num len = do
     return (rn `div` rd)
 ````
 
-Why is this important? the importance of reflecting real life is in the behaviour of developers. If the "arbitrary" generated type has a balanced structure as in the Claasen and Hughes paper, or heavily skewed distribution, e.g. taking one from remaining nodes at the beginning of a conjunction or disjunction, leading to a front heavy balance of the generated formula, then when programmers see that their algorithm that is consuming the generated type is slow, they will optimize for the performance for the balance of the represenation.  lets say a developer has optimized for a front heavy tree at the cost of a back heavy tree, then the developers tests will be great, but reality might disagree.
+Why is this important? the importance of reflecting real life is in the behaviour of developers. If the "arbitrary" generated type has a balanced structure as in the Claasen and Hughes paper, or heavily skewed distribution, e.g. taking one from remaining nodes at the beginning of a conjunction or disjunction, leading to a front heavy balance of the generated formula, then when programmers see that their algorithm that is consuming the generated type is slow, they will optimize for the performance for the balance of the representation.  Let's say a developer has optimized for a front heavy tree at the cost of a back heavy tree, then the developers tests will be great, but reality might disagree.
 
 #### negation generator
-We generate a list that randomly distributes the remaining operatots over a list of size 1, and take the first item.
+We generate a list that randomly distributes the remaining operators over a list of size 1, and take the first item.
 
 ````haskell
 negGen:: Int -> Gen Form
@@ -135,8 +136,8 @@ negGen s = do
 
 (ok, this might be re-use gone mad, however most of my bugs came from not reducing the remaining operators in too many places, so I just leave that reduction in one place the `formDistributionGen` function)
 
-#### implication and equivalance generators
-We generate a list that randomly distributes the remaining operatots over a list of size 2.  We take the first item as the first argument and the last item as the second argument.  we randomly pick either an Impl or an Equiv constuctor.
+#### implication and equivalence generators
+We generate a list that randomly distributes the remaining operators over a list of size 2.  We take the first item as the first argument and the last item as the second argument.  we randomly pick either an Impl or an Equiv constructor.
 
 ````haskell
 imEqGen:: Int -> Gen Form
@@ -147,7 +148,7 @@ imEqGen s = do
 ````
 
 #### conjunction and disjunction generators
-We generate a list that randomly distributes the remaining operatots over a list of an arbirarily chosen size and supply it as the argument.  We randomly pick either a Dsj or a Cnj constuctor.
+We generate a list that randomly distributes the remaining operators over a list of an arbitrarily chosen size and supply it as the argument.  We randomly pick either a Dsj or a Cnj constructor.
 
 ````haskell
 cjDjGen:: Int -> Gen Form
@@ -169,10 +170,10 @@ lenGen = frequency [
 ````
 
 ## Testing generator ##
-first we tested the `formGen` function by eye, using QuickChecks `generate` function.  
-We ran it with an limit of 1,000,000 functions. This took 2:58 to complete running in ghci on a 2 core surface pro.  This gave us confidence that it would terminate.
+First, we tested the `formGen` function by eye, using QuickChecks `generate` function.  
+We ran it with an limit of 1,000,000 functions. This took 2:58 to complete running in ghci on a 2-core surface pro.  This gave us confidence that it would terminate.
 
-To give us more confidence of termination we wrote a test that would confirm that the number of operators requested by `formGen` was the same as those produced.  We considered making `Form` a functor, so that we could use fmap for counting the operators, however we chose the easier path of counting the operators of the displayed formula.  The substring counter inpired by http://www.programming-idioms.org/idiom/82/count-substring-occurrences/999/haskell)
+To give us more confidence of termination we wrote a test that would confirm that the number of operators requested by `formGen` was the same as those produced.  We considered making `Form` a functor, so that we could use fmap for counting the operators, however we chose the easier path of counting the operators of the displayed formula.  The substring counter inspired by http://www.programming-idioms.org/idiom/82/count-substring-occurrences/999/haskell)
 
 ````haskell
 opCount ops s = sum [ 1 | r <- tails s, ss <-ops , isPrefixOf ss r ]
@@ -184,7 +185,7 @@ genProp_validOpCount = do
 test_ValidOpCount = verboseCheck $ forAll genProp_validOpCount (==True)
 ````
 
-Now that we were fully confidant that we had avoided the naive traps in recursive testing of non-termination and size explosion, we moved on to validity. This was relatively simple, we use QuickCheck to arbitrily create Forms and, relying on show and parse to be reflexive we compare the output of parse of show of the formula with the original formula.
+Now that we were fully confident that we had avoided the naive traps in recursive testing of non-termination and size explosion, we moved on to validity. This was relatively simple, we use QuickCheck to arbitrarily create Forms and, relying on show and parse to be reflexive we compare the output of parse of show of the formula with the original formula.
 
 ````haskell
 prop_validForm form = (head $ parse $ show form) == form
@@ -201,7 +202,7 @@ prop_validCnfConversion form = equiv form (cnfGenerator form)
 test_validCnfConversion = verboseCheck prop_validCnfConversion
 ````
 
-Whilst the quickCheck run was successfull it was slow, taking an average of 1:39, to complete 100 tests over 5 runs.
+Whilst the quickCheck run was successful it was slow, taking an average of 1:39, to complete 100 tests over 5 runs.
 
 Below are some example test results of test_validCnfConversion:
 
