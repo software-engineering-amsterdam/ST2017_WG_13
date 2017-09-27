@@ -17,10 +17,9 @@ prop_testSet xs = (list2set xs) == (list2set xs)
 
 instance (Ord a, Arbitrary a) => Arbitrary (Set a) where
     arbitrary = sized (\n -> do
-        lst <- oneof [choose (0,n) >>= vector]
+        lst <- choose (0,n) >>= vector
         return $ list2set lst)
-    shrink = shrink1
-
+    
 newtype SetInt = SetInt { unSetInt :: Set Int } deriving (Eq, Show)
 
 instance Arbitrary SetInt where 
