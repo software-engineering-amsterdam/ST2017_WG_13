@@ -11,6 +11,9 @@ import Control.Monad
     https://github.com/software-engineering-amsterdam/ST2017_WG_13/tree/master/Team/4/Exercise_2.md
 -}
 
+
+-- random by hand:
+
 siGen::Int -> IO (Set Int)
 siGen n = do
     l <- getStdRandom (randomR (0,n))
@@ -40,9 +43,14 @@ test_areEqual::IO()
 test_areEqual = setIntTester 1 100 unionEmpty prop_areEqual
 
 
+-- Quickcheck for Int list input:
+
 prop_setWithList::[Int] -> Bool
 prop_setWithList xs = (list2set xs) == (unionEmpty $ list2set xs) 
 test_setWithList = verboseCheck prop_setWithList    
+
+
+-- Quickcheck with Arbitary (Set a)
 
 instance (Ord a, Arbitrary a) => Arbitrary (Set a) where
     arbitrary = sized (\n -> do
@@ -56,8 +64,10 @@ prop_arbitrarySetA::Set Int -> Bool
 prop_arbitrarySetA si = si == (unionEmpty si)
 test_arbitrarySetA = verboseCheck prop_arbitrarySetA
 
-newtype SetInt = SetInt { unSetInt :: Set Int } deriving (Eq, Show)
 
+-- QuickCheck with Arbitary (Set Int) 
+
+newtype SetInt = SetInt { unSetInt :: Set Int } deriving (Eq, Show)
 
 instance Arbitrary SetInt where 
     arbitrary = sized (\n -> do
@@ -81,6 +91,7 @@ prop_setInt::SetInt -> Bool
 prop_setInt si = si == (unionEmpty' si )
 test_setInt = verboseCheck prop_setInt 
 
+-- Testing with shrink
 
 set2list :: Set Int -> [Int]
 set2list (Set ns) = ns

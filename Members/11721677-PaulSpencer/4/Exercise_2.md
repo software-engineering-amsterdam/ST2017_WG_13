@@ -126,7 +126,7 @@ arbitraryListGen n = choose (0,n) >>= vector
 ````
 
 #### Testing (Set a) with QuickCheck
-Now that we have implemented `Arbitrary` to `Set a` we use QuickCheck to generate a Set Int, as follows:
+Now that we have implemented `Arbitrary` for `Set a`, we can use QuickCheck to generate a `Set Int`, on the property as follows:
 
 ````haskell
 prop_arbitrarySetA::Set Int -> Bool
@@ -153,7 +153,7 @@ Passed:
 +++ OK, passed 100 tests.
 
 ### Generate (Set Int) with QuickCheck
-Implementing `Arbirary` for `Set a` has two major disadvantages. Firstly, and most importantly to this exercise, it could be argued that this is not what was asked for. The Question asks us to use QuickCheck to test this datatype, and to an extent we are checking `Set a` and not `Set Int`. Secondly, and more importantly for us, by only testing `Set a` we cede control of the generation of data points to that that can be generated for data types that implement `Ord`.  This means that the above test results, which are created by the default implementation of `Arbitrary Int` when generated within `vector`.
+Implementing `Arbirary` for `Set a` has two major disadvantages. Firstly, and most importantly to this exercise, it could be argued that this is not what was asked for. The question asks us to use QuickCheck to test this datatype, and to an extent we are testing `Set a` and not `Set Int`. Secondly, and more importantly for us, by only testing `Set a` we cede control of the generation of data points to that that can be generated for data types that implement `Ord`.  This means that the test results on `Set a`, which are in turn created by the default implementation of `Arbitrary Int` when generated from the `vector` function.  This causes, for some reason, only numbers between -99 and +99. We wanted to test more numbers. As the `a` in `Set a` refers to types that implement `Ord` we would only be to add a generator that created items that were `Ord` in the `arbitary` function of `Arbitrary (Set a)`. If we want to create our own generator that is `Int` specific, we will have to implement `Arbitrary (Set Int)`.
 
 It is not posible to create an `Arbitrary (Set Int)` implementation without using `{-# LANGUAGE FlexibleInstances #-}` GHC language extension.  As this would affect portablity of the code to other compilers, we chose to instead use `newtype` to wrap `Set Int`:
 
@@ -161,7 +161,7 @@ It is not posible to create an `Arbitrary (Set Int)` implementation without usin
 newtype SetInt = SetInt { unSetInt :: Set Int } deriving (Eq, Show)
 ````
 
-Now we could go ahead and specifically test `Set Int` by implementing `Arbitrary` on our new type `SetInt`.  This has the extra overhead of packing and unpacking the type, however it gives us the advantage of being able to add our own random integer generation `intListGen`.  We decided that the numbers created whilst usefull were not satisfactory, so we wanted to generate larger numbers.  To do this we use `choose (minBound, maxBound)` to pick any valid integer and then recursively build a list. In our instance of `Arbitrary` we use `oneof` to call either arbitraryListGen or arbitraryListGen. 
+Now we could go ahead and specifically test `Set Int` by implementing `Arbitrary` on our new type `SetInt`.  This has the extra overhead of packing and unpacking the type, however it gives us the advantage of being able to add our own random integer generation `intListGen`.  We decided that the numbers created whilst useful were not satisfactory, so we wanted to generate larger numbers.  To do this we use `choose (minBound, maxBound)`, to pick any valid integer, and then recursively build a list. In our instance of `Arbitrary` we use `oneof` to call either arbitraryListGen or arbitraryListGen. 
 
 ````haskell
 instance Arbitrary SetInt where 
@@ -177,9 +177,7 @@ intListGen n = do
 ```` 
 
 #### Testing Generate (Set Int) with QuickCheck
-Wrapping `Set Int` makes testing a little more cumbersome, to do the same test that a union with an empty test is the same means we have to write a new function for `unionSet` and `unionEmpty` to handle the new type `SetInt`:
-
-When we run we can now see both the arbitary and our specialised number generators are used:
+Wrapping `Set Int` makes testing a more cumbersome. To do the same test as above, i.e. that a union with an empty test is the same, means we have to write a new function for `unionSet'` and `unionEmpty'` to handle the new type `SetInt`:
 
 ````haskell 
 unionSet'::SetInt -> SetInt -> SetInt 
@@ -196,7 +194,7 @@ prop_setInt si = si == (unionEmpty' si )
 test_setInt = verboseCheck prop_setInt 
 ````
 
-Some example results are as follows:
+When we run the test we can now see both the default arbitary generator and our specialised number generators are used. Some example results are as follows:
 
 Passed:
 SetInt {unSetInt = {7278365512726356731}}
@@ -236,11 +234,11 @@ I run my test and get the following:
 *** Failed! Falsifiable (after 22 tests):
 SetInt {unSetInt = {-21,-19,-18,-14,-11,-7,-4,2,8,9,10,15,18}}
 
-It is nice to know that the test fails, however now I have to work through 13 cases to find out which one is equal to 9 and thus causing the crash.
+It is nice to know that the test fails, however now I have to work through 13 cases to find out which one is causing the crash.
 
 What `shrink` does is reduce your search space of failures by shinking the result to the smallest possible failure.
 
-In order to shrink our SetInt I will unwrap the Set Int, pull out the list, using a helper method set2list, perform the default shrink on the list, which will create a list of possible shrink outcomes, I will then convert all these outcomes back into `SetInt`'s my mapping `(SetInt . list2set)` over the results.
+In order to shrink our SetInt I will unwrap the `Set Int`, pull out the list, using a helper method `set2list`, perform the default `shrink` on the list, which will create a list of possible shrink outcomes, I will then convert all these outcomes back into `SetInt`'s by mapping `(SetInt . list2set)` over the results.
 
 ````haskell
 instance Arbitrary SetInt where 
@@ -253,7 +251,7 @@ set2list (Set ns) = ns
 
 #### Testing With shrink
 
-Running the test now will show the following results after a SetInt containing 9 has been found shrinks the results to show the smalled possible failing test is SetInt {unSetInt = {9}}:
+Running the test now will show the following results after a `SetInt` containing 9 has been found shrinks the results to show the smalled possible failing test is SetInt {unSetInt = {9}}:
 
 Failed:
 SetInt {unSetInt = {-13,-8,-2,-1,0,3,4,5,8,9}}
