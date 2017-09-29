@@ -8,7 +8,6 @@ module Exercise_2 where
   import SetOrd
   import Test.QuickCheck
   import Data.List
-  import Data.Either
 
   -------------------------------------------------------------------------
   -- Generators from scratch
@@ -81,8 +80,7 @@ module Exercise_2 where
         return $ list2set lst)
 
   testQuickCheck = do
-  
-    do
+
       quickCheck  prop_UnionSelf 
       quickCheck  prop_Unique
 
