@@ -6,18 +6,23 @@ import Test.QuickCheck
 import SetOrd
 import Control.Monad
 
-siSizedGen::Int -> IO (Set Int)
-siSizedGen n = do
-    g <- getStdGen
+{-
+    notes for this exercise can be found at:
+    https://github.com/software-engineering-amsterdam/ST2017_WG_13/tree/master/Team/4/Exercise_2.md
+-}
+
+siGen::Int -> IO (Set Int)
+siGen n = do
     l <- getStdRandom (randomR (0,n))
+    g <- getStdGen
     return $ list2set $ take l (randoms g :: [Int])
-    
+
 setIntTester :: Int -> Int -> (Set Int -> Set Int) -> (Set Int -> Set Int -> Bool) -> IO ()
 setIntTester current total functionToTest isValid = 
     if current == total then 
         print (show total ++ " tests passed")
     else do
-        si <- siSizedGen 20
+        si <- siGen 20
         if isValid si (functionToTest si) then
             do 
                 print ("pass on: " ++ show si)
@@ -35,22 +40,28 @@ test_areEqual::IO()
 test_areEqual = setIntTester 1 100 unionEmpty prop_areEqual
 
 
-prop_testSetWithList::[Int] -> Bool
-prop_testSetWithList xs = (list2set xs) == (list2set xs) 
-    
+prop_setWithList::[Int] -> Bool
+prop_setWithList xs = (list2set xs) == (unionEmpty $ list2set xs) 
+test_setWithList = verboseCheck prop_setWithList    
+
 instance (Ord a, Arbitrary a) => Arbitrary (Set a) where
     arbitrary = sized (\n -> do
-        lst <- choose (0,n) >>= vector
+        lst <- arbitraryListGen n
         return $ list2set lst)
 
-prop_testSet::Set Int -> Bool
-prop_testSet si = si == si
+arbitraryListGen::(Ord a, Arbitrary a) => Int -> Gen [a]
+arbitraryListGen n = choose (0,n) >>= vector
+
+prop_arbitrarySetA::Set Int -> Bool
+prop_arbitrarySetA si = si == (unionEmpty si)
+test_arbitrarySetA = verboseCheck prop_arbitrarySetA
 
 newtype SetInt = SetInt { unSetInt :: Set Int } deriving (Eq, Show)
 
+
 instance Arbitrary SetInt where 
     arbitrary = sized (\n -> do
-        lst <- oneof [(intListGen n),choose (0,n) >>= vector]
+        lst <- oneof [(intListGen n), (arbitraryListGen n)]
         return $ SetInt $ list2set lst)
     shrink si = map (SetInt . list2set) $ shrink $ set2list $ unSetInt si
 
@@ -58,14 +69,22 @@ intListGen::Int -> Gen [Int]
 intListGen n = do
     r <- choose (minBound, maxBound)
     rs <- intListGen (n-1)
-    return $ r : (take n rs)
+    return $ r : (take (n-1) rs)
+
+unionSet'::SetInt -> SetInt -> SetInt 
+unionSet' si1 si2 =  SetInt $ unionSet (unSetInt si1) (unSetInt si2)
+
+unionEmpty'::SetInt -> SetInt
+unionEmpty' si = unionSet' si (SetInt emptySet)
+
+prop_setInt::SetInt -> Bool
+prop_setInt si = si == (unionEmpty' si )
+test_setInt = verboseCheck prop_setInt 
+
 
 set2list :: Set Int -> [Int]
 set2list (Set ns) = ns
     
-
-prop_testSet'::SetInt -> Bool
-prop_testSet' si = si == si
-
-prop_testSetNoNine::SetInt -> Bool
-prop_testSetNoNine si = not $ inSet 9 (unSetInt si)
+prop_noNinesInSet::SetInt -> Bool
+prop_noNinesInSet si = not $ inSet 9 (unSetInt si)
+test_noNinesInSet = verboseCheck prop_noNinesInSet
