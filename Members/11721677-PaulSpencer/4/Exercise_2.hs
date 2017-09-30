@@ -4,7 +4,6 @@ import Data.List
 import System.Random
 import Test.QuickCheck
 import SetOrd
-import Control.Monad
 
 {-
     notes for this exercise can be found at:
@@ -32,6 +31,7 @@ setIntTester current total functionToTest isValid =
                 setIntTester (current+1) total functionToTest isValid
         else 
             error ("failed test on: " ++ show si)
+
 
 prop_areEqual::Set Int -> Set Int -> Bool
 prop_areEqual x y = x == y
@@ -90,6 +90,7 @@ unionEmpty' si = unionSet' si (SetInt emptySet)
 prop_setInt::SetInt -> Bool
 prop_setInt si = si == (unionEmpty' si )
 test_setInt = verboseCheck prop_setInt 
+
 
 -- Testing with shrink
 
