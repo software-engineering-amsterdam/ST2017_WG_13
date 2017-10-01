@@ -51,7 +51,3 @@ trClos r
     | transCheck r = r
     | otherwise = trClos r' where r' = nub (r ++ (r @@ r))
 ```
-
-
-
-

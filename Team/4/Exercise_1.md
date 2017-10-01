@@ -14,6 +14,3 @@
 1. I don't feel any clearer in my understanding of the halting problem after reading the description than before - the function `funny` does not make it clearer. (not a question, just a comment - had to look it up on wikipedia)
 1. I did not get Generalized Union and Intersection, both the definition and the following explanation.
 1. powerList (powerList (powerList (powerList empty))) did not leave me feeling enlightened.  It's implementation in haskell, `display 88 (take 1760 (show v5))`, had simularities to the last page of a long lisp program.
-
-## Notes
-There was discussion with regards to the purpose of Question 1 and 4. It is noted that this discussion is superflous to this answer, however, for the curious, the discussion can be found on Pauls Member page.

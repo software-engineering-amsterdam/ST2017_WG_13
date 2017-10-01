@@ -4,10 +4,13 @@ import Data.List
 import Test.QuickCheck
 import Lecture4
 
+{-
+    notes for this exercise can be found at:
+    https://github.com/software-engineering-amsterdam/ST2017_WG_13/tree/master/Team/4/Exercise_5.md
+-}
+
 type Rel a = [(a,a)]
 
-{- The symmetric closure of a set R is the union of R and its inverse: R U R'-}
--- Time taken: ~30 mins including reading relation theory
 inverseR :: Rel a -> Rel a
 inverseR [] = []
 inverseR ((x,y):xs) = [(y,x)] ++ inverseR xs  

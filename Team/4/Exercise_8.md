@@ -46,5 +46,3 @@ A property for automated testing can be defined as the function:
 testCommutative :: Rel Int -> Bool
 testCommutative r = (symClos $ trClos r) == (trClos $ symClos r)
 ```
-
-

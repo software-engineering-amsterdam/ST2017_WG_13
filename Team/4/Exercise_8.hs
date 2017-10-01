@@ -6,6 +6,11 @@ import Lecture4
 import Exercise_5
 import Exercise_6
 
+{-
+    notes for this exercise can be found at:
+    https://github.com/software-engineering-amsterdam/ST2017_WG_13/tree/master/Team/4/Exercise_8.md
+-}
+
 -- Our valid test relation for the counter model
 testRel = [(0,1)]
 
@@ -16,17 +21,6 @@ y = trClos $ symClos testRel
 
 diff = y \\ x
 -- output diff = [(0,0),(1,1)]
-
-{-
-
-It's clear to see that the symmetric closure of the transitive closure
-over our test relation contains fewer items than the transitive closure
-of the symmetric closure of our test relation. 
-
-This shows that the properties of the relation are not commutative over
-each other for all valid relations.
-
--}
 
 
 -- A testable property for automatic testing
