@@ -33,4 +33,4 @@ each other for all valid relations.
 testCommutative :: Rel Int -> Bool
 testCommutative r = (symClos $ trClos r) == (trClos $ symClos r)
 
-runTest = testCommutative testRel
+runTest = quickCheck testCommutative
