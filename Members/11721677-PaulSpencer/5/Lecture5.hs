@@ -21,14 +21,11 @@ validvalues = [1..9]
 blocks::[[Int]]
 blocks =[[1..3],[2..4],[4..6],[6..8],[7..9]]
 
-bl::Int -> [Int]
-bl x = concat $ filter (elem x) blocks 
+blockMember::Int -> [Int]
+blockMember x = concat $ filter (elem x) blocks 
 
 subGrid::ValueAtLocation -> Location -> [Value]
-subGrid s (r,c) = [s (r',c') | r' <- bl r, c' <- bl c]
-
-
-
+subGrid valFinder (r,c) = [valFinder (r',c') | r' <- blockMember r, c' <- blockMember c]
 
 injective::Eq a => [a] -> Bool
 injective xs = nub xs == xs
@@ -78,11 +75,8 @@ showTryAtLoc = showGrid . try2grid
 showNode::SnapShot -> IO()
 showNode node = showTryAtLoc $ fst node
 
-solved ::SnapShot -> Bool
-solved node = null $ snd node
-
 extendNode::SnapShot -> Constraint -> [SnapShot]
-extendNode (valFinder,constraints) (loc,vs) = [(branchNextLevel valFinder (loc,v), sortBy length3rd $ prune (loc,v) constraints) | v <- vs]
+extendNode (valFinder,constraints) (loc,vs) = [(branchNextLevel valFinder (loc,v), sortBy remaingValuesCompare $ prune (loc,v) constraints) | v <- vs]
 
 prune::(Location,Value) -> [Constraint] -> [Constraint]
 prune _ [] = []
@@ -96,43 +90,25 @@ prune (oloc@(r,c),v) ((cloc@(x,y),zs):rest)
         nextPrune = prune (oloc,v) rest
 
 sameblock:: Location -> Location -> Bool
-sameblock (r,c) (x,y) = bl r == bl x && bl c == bl y 
-
-grid2try::Grid -> ValueAtLocation
-grid2try vs = (\(r,c) -> (vs !! (r-1)) !! (c-1))
-
-initNode::Grid -> [SnapShot]
-initNode gr = let s = grid2try gr in 
-              if (not . consistent) s then [] 
-              else [(s, constraints s)]
+sameblock (r,c) (x,y) = blockMember r == blockMember x && blockMember c == blockMember y 
 
 openPositions::ValueAtLocation -> [(Row,Column)]
 openPositions valFinder = [(r,c) | r <- positions, c <- positions, valFinder (r,c) == 0]
 
-length3rd::((a,b),[c]) -> ((a,b),[c]) -> Ordering
-length3rd ((_,_),zs) ((_,_),zs') = compare (length zs) (length zs')
+remaingValuesCompare::Constraint -> Constraint -> Ordering
+remaingValuesCompare (_,vs) (_,vs') = compare (length vs) (length vs')
 
 constraints::ValueAtLocation -> [Constraint] 
-constraints valFinder = sortBy length3rd 
+constraints valFinder = sortBy remaingValuesCompare 
     [(loc, findConstraints valFinder loc) | loc <- openPositions valFinder]
 
--- 
-stillToFind::[Value] -> [Value]
-stillToFind currentGroup = validvalues \\ currentGroup 
-
-missingFromRow::ValueAtLocation -> Row -> [Value]
-missingFromRow valFinder r = stillToFind [valFinder (r,i) | i <- positions ]
-
-missingFromColumn::ValueAtLocation -> Column -> [Value]
-missingFromColumn valFinder c = stillToFind [valFinder (i,c) | i <- positions]
-
-missingFromSubgrid::ValueAtLocation -> Location -> [Value]
-missingFromSubgrid valFinder loc = stillToFind (subGrid valFinder loc)
-
 findConstraints::ValueAtLocation -> Location -> [Value]
-findConstraints valFinder loc@(r,c) = (missingFromRow valFinder r) 
-   `intersect` (missingFromColumn valFinder c) 
-   `intersect` (missingFromSubgrid valFinder loc) 
+findConstraints valFinder loc@(r,c) = notInRow `intersect` notInColumn `intersect` notInSubgrid 
+    where 
+        notInRow = stillToFind [valFinder (r,i) | i <- positions ]
+        notInColumn = stillToFind [valFinder (i,c) | i <- positions]
+        notInSubgrid = stillToFind (subGrid valFinder loc)
+        stillToFind currentGroup = validvalues \\ currentGroup 
 
 
 search::(SnapShot -> [SnapShot]) -> (SnapShot -> Bool) -> [SnapShot] -> [SnapShot]
@@ -147,15 +123,26 @@ searchBFS children goal (x:xs)
   | goal x    = x : searchBFS children goal xs
   | otherwise = searchBFS children goal (xs ++ (children x))
 
-solveNs::[SnapShot] -> [SnapShot]
-solveNs = search succNode solved 
+noremaingvalues ::SnapShot -> Bool
+noremaingvalues node = null $ snd node
 
-succNode::SnapShot -> [SnapShot]
-succNode (s,[]) = []
-succNode (s,p:ps) = extendNode (s,ps) p 
+solveNs::[SnapShot] -> [SnapShot]
+solveNs = search nextLevelSnapShots noremaingvalues 
+
+nextLevelSnapShots::SnapShot -> [SnapShot]
+nextLevelSnapShots (s,[]) = []
+nextLevelSnapShots (s,p:ps) = extendNode (s,ps) p 
+
+valFinderFromGrid::Grid -> ValueAtLocation
+valFinderFromGrid vs = (\(r,c) -> (vs !! (r-1)) !! (c-1))
+
+initSnapShot::Grid -> [SnapShot]
+initSnapShot grid = let valFinder = valFinderFromGrid grid in 
+              if (not . consistent) valFinder then [] 
+              else [(valFinder, constraints valFinder)]
 
 solveAndShow::Grid -> IO[()]
-solveAndShow gr = solveShowNs (initNode gr)
+solveAndShow gr = solveShowNs (initSnapShot gr)
 
 solveShowNs::[SnapShot] -> IO[()]
 solveShowNs = sequence . fmap showNode . solveNs
@@ -196,7 +183,7 @@ rsuccNode (s,cs) = do xs <- getRandomCnstr cs
                           (extendNode (s,cs\\xs) (head xs))
 
 rsolveNs::[SnapShot] -> IO [SnapShot]
-rsolveNs ns = rsearch rsuccNode solved (return ns)
+rsolveNs ns = rsearch rsuccNode noremaingvalues (return ns)
 
 rsearch::(node -> IO [node]) -> (node -> Bool) -> IO [node] -> IO [node]
 rsearch succ goal ionodes = 
