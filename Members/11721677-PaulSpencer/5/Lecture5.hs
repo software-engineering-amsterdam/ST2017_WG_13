@@ -27,22 +27,8 @@ bl x = concat $ filter (elem x) blocks
 subGrid::ValueAtLocation -> Location -> [Value]
 subGrid s (r,c) = [s (r',c') | r' <- bl r, c' <- bl c]
 
-stillToFind::[Value] -> [Value]
-stillToFind currentGroup = validvalues \\ currentGroup 
 
-freeInRow::ValueAtLocation -> Row -> [Value]
-freeInRow valFinder r = stillToFind [valFinder (r,i) | i <- positions ]
 
-freeInColumn::ValueAtLocation -> Column -> [Value]
-freeInColumn valFinder c = stillToFind [valFinder (i,c) | i <- positions]
-
-freeInSubgrid::ValueAtLocation -> Location -> [Value]
-freeInSubgrid valFinder loc = stillToFind (subGrid valFinder loc)
-
-freeAtPos::ValueAtLocation -> Location -> [Value]
-freeAtPos valFinder loc@(r,c) = (freeInRow valFinder r) 
-   `intersect` (freeInColumn valFinder c) 
-   `intersect` (freeInSubgrid valFinder loc) 
 
 injective::Eq a => [a] -> Bool
 injective xs = nub xs == xs
@@ -70,12 +56,7 @@ consistent valFinder = and $
                 ++
                [subgridInjective valFinder (r,c) |  r <- (map head blocks), c <- (map head blocks)]
 
-
--- type ValueAtLocation = Location -> Value
--- type Constraint = (Location,[Value])
---type S = (ValueAtLocation,[Constraint])
--- type FilledCell  = (Location, Value)
---              loc->val     
+     
 update::(Location -> Value) -> (Location, Value) -> Location -> Value 
 update f (oloc,val) nloc = 
   if nloc == oloc then 
@@ -133,7 +114,25 @@ length3rd ((_,_),zs) ((_,_),zs') = compare (length zs) (length zs')
 
 constraints::ValueAtLocation -> [Constraint] 
 constraints valFinder = sortBy length3rd 
-    [((r,c), freeAtPos valFinder (r,c)) | (r,c) <- openPositions valFinder]
+    [(loc, findConstraints valFinder loc) | loc <- openPositions valFinder]
+
+-- 
+stillToFind::[Value] -> [Value]
+stillToFind currentGroup = validvalues \\ currentGroup 
+
+missingFromRow::ValueAtLocation -> Row -> [Value]
+missingFromRow valFinder r = stillToFind [valFinder (r,i) | i <- positions ]
+
+missingFromColumn::ValueAtLocation -> Column -> [Value]
+missingFromColumn valFinder c = stillToFind [valFinder (i,c) | i <- positions]
+
+missingFromSubgrid::ValueAtLocation -> Location -> [Value]
+missingFromSubgrid valFinder loc = stillToFind (subGrid valFinder loc)
+
+findConstraints::ValueAtLocation -> Location -> [Value]
+findConstraints valFinder loc@(r,c) = (missingFromRow valFinder r) 
+   `intersect` (missingFromColumn valFinder c) 
+   `intersect` (missingFromSubgrid valFinder loc) 
 
 
 search::(SnapShot -> [SnapShot]) -> (SnapShot -> Bool) -> [SnapShot] -> [SnapShot]
