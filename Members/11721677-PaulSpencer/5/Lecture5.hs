@@ -14,9 +14,19 @@ type ValueAtLocation = Location -> Value
 type Constraint = (Location,[Value])
 type SnapShot = (ValueAtLocation,[Constraint])
 
-positions, validvalues::[Int]
-positions   = [1..9]
-validvalues = [1..9] 
+
+-- run program
+main::IO ()
+main = do 
+  [r] <- rsolveNs [emptyN]
+  showSnapShot r
+  -- s  <- genProblem r
+  -- showSnapShot s
+
+
+-- position helpers
+positions::[Int]
+positions = [1..9]
 
 stdblocks,nrcblocks::[[Int]]
 stdblocks =[[1..3],[4..6],[7..9]]
@@ -32,37 +42,27 @@ allsubgridlocs = subgridlocs ++ nrcgridlocs
 subgridsForLoc::Location -> [[Location]]
 subgridsForLoc loc = filter (elem loc) allsubgridlocs
 
--- blockMember::Int -> [Int]
--- blockMember x = concat $ filter (elem x) stdblocks 
+locsofrow::Int -> [Location]
+locsofrow row = rowlocs !! (row-1)
 
-subGrid::ValueAtLocation -> Location -> [Value]
-subGrid valFinder loc = [valFinder loc' | loc' <- concat $ subgridsForLoc loc]
+locsofcol::Int -> [Location]
+locsofcol col = rowlocs !! (col-1)
+--
 
-injective::Eq a => [a] -> Bool
-injective xs = nub xs == xs
-
+valsInSubGrid::ValueAtLocation -> Location -> [Value]
+valsInSubGrid valFinder loc = [valFinder loc' | loc' <- concat $ subgridsForLoc loc]
 
 initSnapShot::Grid -> [SnapShot]
 initSnapShot grid = 
-  if (not . consistent) valFinder then [] else [(valFinder, constraints valFinder)]
+  if (not . consistentGrid) valFinder then [] else [(valFinder, constraints valFinder)]
     where 
       valFinder = valFinderFromGrid grid
-      consistent valFinder = and $
-               [rowInjective valFinder r |  r <- positions]
-                ++
-               [colInjective valFinder c |  c <- positions]
-                ++
-               [subgridInjective valFinder (r,c) |  r <- (map head stdblocks), c <- (map head stdblocks)]
-      rowInjective valFinder r = injective vs 
-          where 
-              vs = filter (/= 0) [valFinder (r,i) | i <- positions]
-      colInjective valFinder c = injective vs 
-          where 
-              vs = filter (/= 0) [valFinder (i,c) | i <- positions]
-      subgridInjective valFinder loc = injective vs 
-          where 
-              vs = filter (/= 0) (subGrid valFinder loc)
-              
+      consistentGrid valFinder = and $ (consisentRows ++ consisentCols ++ consisentSubs)
+      consisentRows = map injective $ valsFrom rowlocs
+      consisentCols = map injective $ valsFrom collocs
+      consisentSubs = map injective $ valsFrom allsubgridlocs
+      injective xs = nub xs == xs
+      valsFrom locss = map (filter (/= 0)) [[valFinder loc | loc <- locs] | locs <- locss]
 
 update::(Location -> Value) -> (Location, Value) -> Location -> Value 
 update valFinder (origloc, val) newloc = 
@@ -74,14 +74,11 @@ update valFinder (origloc, val) newloc =
 branchNextLevel::ValueAtLocation -> FilledCell -> ValueAtLocation
 branchNextLevel valFinder cell@(loc,val) = update valFinder (loc,val)
 
-valueFinderToGrid::ValueAtLocation -> Grid
-valueFinderToGrid valFinder = [[valFinder (r,c) | c <- positions] | r <- positions] 
-
-showPotentialGrid::ValueAtLocation -> IO()
-showPotentialGrid = showGrid . valueFinderToGrid
-
 showSnapShot::SnapShot -> IO()
 showSnapShot (valueFinder, _) = showPotentialGrid valueFinder
+    where 
+      showPotentialGrid = showGrid . valueFinderToGrid
+      valueFinderToGrid valFinder = [[valFinder (r,c) | c <- positions] | r <- positions] 
 
 branchSnapShot::SnapShot -> Constraint -> [SnapShot]
 branchSnapShot (valFinder,constraints) (loc,vs) = [(branchNextLevel valFinder (loc,v), sortBy remaingValuesCompare $ prune (loc,v) constraints) | v <- vs]
@@ -89,34 +86,32 @@ branchSnapShot (valFinder,constraints) (loc,vs) = [(branchNextLevel valFinder (l
 prune::(Location,Value) -> [Constraint] -> [Constraint]
 prune _ [] = []
 prune (oloc@(r,c),v) ((cloc@(x,y),zs):rest)
-  | r == x              = trimConstraint
-  | c == y              = trimConstraint
-  | sameblock oloc cloc = trimConstraint
-  | otherwise           = (cloc,zs) : nextPrune
+  | r == x                = trimConstraint
+  | c == y                = trimConstraint
+  | samesubgrid oloc cloc = trimConstraint
+  | otherwise             = (cloc,zs) : nextPrune
       where
         trimConstraint = (cloc,zs\\[v]) : nextPrune
         nextPrune = prune (oloc,v) rest
-
-sameblock:: Location -> Location -> Bool
-sameblock locl locr = any (==True) [sgl == sgr | sgl <- subgridsForLoc locl, sgr <- subgridsForLoc locr]
-
-openPositions::ValueAtLocation -> [(Row,Column)]
-openPositions valFinder = [(r,c) | r <- positions, c <- positions, valFinder (r,c) == 0]
-
+        samesubgrid l1 l2 = or [sg1 == sg2 | sg1 <- subgridsForLoc l1, sg2 <- subgridsForLoc l2]
+        
 remaingValuesCompare::Constraint -> Constraint -> Ordering
 remaingValuesCompare (_,vs) (_,vs') = compare (length vs) (length vs')
 
 constraints::ValueAtLocation -> [Constraint] 
 constraints valFinder = sortBy remaingValuesCompare 
     [(loc, findConstraints valFinder loc) | loc <- openPositions valFinder]
+    where 
+      openPositions valFinder = [(r,c) | r <- positions, c <- positions, valFinder (r,c) == 0]
 
 findConstraints::ValueAtLocation -> Location -> [Value]
 findConstraints valFinder loc@(r,c) = notInRow `intersect` notInColumn `intersect` notInSubgrid 
     where 
-        notInRow = stillToFind [valFinder (r,i) | i <- positions ]
-        notInColumn = stillToFind [valFinder (i,c) | i <- positions]
-        notInSubgrid = stillToFind (subGrid valFinder loc)
+        notInRow = stillToFind [valFinder loc | loc <- locsofrow r ]
+        notInColumn = stillToFind [valFinder loc | loc <- locsofcol c]
+        notInSubgrid = stillToFind (valsInSubGrid valFinder loc)
         stillToFind currentGroup = validvalues \\ currentGroup 
+        validvalues = [1..9] 
 
 
 search::(SnapShot -> [SnapShot]) -> (SnapShot -> Bool) -> [SnapShot] -> [SnapShot]
@@ -193,12 +188,6 @@ rsearch succ goal ionodes = do
           rsearch succ goal (return $ tail xs)
 
 
-main::IO ()
-main = do 
-  [r] <- rsolveNs [emptyN]
-  showSnapShot r
-  -- s  <- genProblem r
-  -- showSnapShot s
 
 --- Display Grid
 
