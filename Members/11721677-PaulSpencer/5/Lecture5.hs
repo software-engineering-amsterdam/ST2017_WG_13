@@ -24,29 +24,7 @@ main = do
   -- showSnapShot s
 
 
--- position helpers
-positions::[Int]
-positions = [1..9]
 
-stdblocks,nrcblocks::[[Int]]
-stdblocks =[[1..3],[4..6],[7..9]]
-nrcblocks = [[2..4],[6..8]]
-
-rowlocs, collocs,subgridlocs,allsubgridlocs::[[Location]]
-rowlocs = [[(r,c) | c <- positions] | r <- positions]
-collocs = [[(r,c) | r <- positions] | c <- positions]
-subgridlocs = [[(r, c) | r <- rs, c <- cs] | rs <- stdblocks, cs <- stdblocks ]
-nrcgridlocs = [[(r, c) | r <- rs, c <- cs] | rs <- nrcblocks, cs <- nrcblocks ]
-allsubgridlocs = subgridlocs ++ nrcgridlocs
-
-subgridsForLoc::Location -> [[Location]]
-subgridsForLoc loc = filter (elem loc) allsubgridlocs
-
-locsofrow::Int -> [Location]
-locsofrow row = rowlocs !! (row-1)
-
-locsofcol::Int -> [Location]
-locsofcol col = rowlocs !! (col-1)
 --
 
 valsInSubGrid::ValueAtLocation -> Location -> [Value]
@@ -54,7 +32,7 @@ valsInSubGrid valFinder loc = [valFinder loc' | loc' <- concat $ subgridsForLoc 
 
 initSnapShot::Grid -> [SnapShot]
 initSnapShot grid = 
-  if (not . consistentGrid) valFinder then [] else [(valFinder, constraints valFinder)]
+  if (not . consistentGrid) valFinder then [] else [(valFinder, getconstraints valFinder)]
     where 
       valFinder = valFinderFromGrid grid
       consistentGrid valFinder = and $ (consisentRows ++ consisentCols ++ consisentSubs)
@@ -71,9 +49,6 @@ update valFinder (origloc, val) newloc =
   else 
     valFinder newloc 
 
-branchNextLevel::ValueAtLocation -> FilledCell -> ValueAtLocation
-branchNextLevel valFinder cell@(loc,val) = update valFinder (loc,val)
-
 showSnapShot::SnapShot -> IO()
 showSnapShot (valueFinder, _) = showPotentialGrid valueFinder
     where 
@@ -81,7 +56,11 @@ showSnapShot (valueFinder, _) = showPotentialGrid valueFinder
       valueFinderToGrid valFinder = [[valFinder (r,c) | c <- positions] | r <- positions] 
 
 branchSnapShot::SnapShot -> Constraint -> [SnapShot]
-branchSnapShot (valFinder,constraints) (loc,vs) = [(branchNextLevel valFinder (loc,v), sortBy remaingValuesCompare $ prune (loc,v) constraints) | v <- vs]
+branchSnapShot (valFinder, constraints) (loc,vs) = [(nextLevelValFinder v, sortPrunedConstraints v) | v <- vs]
+  where 
+    sortPrunedConstraints val = sortBy remaingValuesCompare $ prune (loc, val) constraints
+    nextLevelValFinder val = branchNextLevel valFinder (loc, val)
+    branchNextLevel valFinder cell@(loc,val) = update valFinder (loc,val)
 
 prune::(Location,Value) -> [Constraint] -> [Constraint]
 prune _ [] = []
@@ -98,10 +77,11 @@ prune (oloc@(r,c),v) ((cloc@(x,y),zs):rest)
 remaingValuesCompare::Constraint -> Constraint -> Ordering
 remaingValuesCompare (_,vs) (_,vs') = compare (length vs) (length vs')
 
-constraints::ValueAtLocation -> [Constraint] 
-constraints valFinder = sortBy remaingValuesCompare 
-    [(loc, findConstraints valFinder loc) | loc <- openPositions valFinder]
+getconstraints::ValueAtLocation -> [Constraint] 
+getconstraints valFinder = sortedConstraints  
     where 
+      sortedConstraints =  sortBy remaingValuesCompare constraintsForLoc
+      constraintsForLoc = [(loc, findConstraints valFinder loc) | loc <- openPositions valFinder]
       openPositions valFinder = [(r,c) | r <- positions, c <- positions, valFinder (r,c) == 0]
 
 findConstraints::ValueAtLocation -> Location -> [Value]
@@ -146,7 +126,7 @@ solveShowNs::[SnapShot] -> IO[()]
 solveShowNs = sequence . fmap showSnapShot . solveNs
 
 emptyN::SnapShot
-emptyN = (\ _ -> 0,constraints (\ _ -> 0))
+emptyN = (\ _ -> 0, getconstraints (\ _ -> 0))
 
 getRandomInt::Int -> IO Int
 getRandomInt n = getStdRandom (randomR (0,n))
@@ -187,7 +167,29 @@ rsearch succ goal ionodes = do
         if null (tail xs) then return [] else 
           rsearch succ goal (return $ tail xs)
 
+-- position helpers
+positions::[Int]
+positions = [1..9]
 
+stdblocks,nrcblocks::[[Int]]
+stdblocks =[[1..3],[4..6],[7..9]]
+nrcblocks = [[2..4],[6..8]]
+
+rowlocs, collocs,subgridlocs,allsubgridlocs::[[Location]]
+rowlocs = [[(r,c) | c <- positions] | r <- positions]
+collocs = [[(r,c) | r <- positions] | c <- positions]
+subgridlocs = [[(r, c) | r <- rs, c <- cs] | rs <- stdblocks, cs <- stdblocks ]
+nrcgridlocs = [[(r, c) | r <- rs, c <- cs] | rs <- nrcblocks, cs <- nrcblocks ]
+allsubgridlocs = subgridlocs ++ nrcgridlocs
+
+subgridsForLoc::Location -> [[Location]]
+subgridsForLoc loc = filter (elem loc) allsubgridlocs
+
+locsofrow::Int -> [Location]
+locsofrow row = rowlocs !! (row-1)
+
+locsofcol::Int -> [Location]
+locsofcol col = rowlocs !! (col-1)
 
 --- Display Grid
 
@@ -328,7 +330,7 @@ example5 = [[1,0,0,0,0,0,0,0,0],
 --                      | otherwise      = s (x,y)
 
 -- eraseN::SnapShot -> (Row,Column) -> SnapShot
--- eraseN n (r,c) = (s, constraints s) 
+-- eraseN n (r,c) = (s, getconstraints s) 
 --   where 
 --     s = eraseS (fst n) (r,c) 
 
