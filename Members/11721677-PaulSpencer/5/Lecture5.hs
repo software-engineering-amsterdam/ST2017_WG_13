@@ -26,9 +26,21 @@ main = do
 
 
 --
+showSnapShot::SnapShot -> IO()
+showSnapShot (valueFinder, _) = showPotentialGrid valueFinder
+    where 
+      showPotentialGrid = showGrid . valueFinderToGrid
+      valueFinderToGrid valFinder = [[valFinder (r,c) | c <- positions] | r <- positions] 
 
-valsInSubGrid::ValueAtLocation -> Location -> [Value]
-valsInSubGrid valFinder loc = [valFinder loc' | loc' <- concat $ subgridsForLoc loc]
+
+solveAndShow::Grid -> IO[()]
+solveAndShow grid = solveShowSnapShots $ initSnapShot grid
+  where 
+    solveShowSnapShots sss = (sequence . fmap showSnapShot . solveSnapShots) sss
+    solveSnapShots sss = search nextLevelSnapShots novals sss
+    nextLevelSnapShots (s,[]) = []
+    nextLevelSnapShots (s,p:ps) = branchSnapShot (s,ps) p 
+    novals = (\(_,vs) -> null vs)
 
 initSnapShot::Grid -> [SnapShot]
 initSnapShot grid = 
@@ -42,6 +54,13 @@ initSnapShot grid =
       injective xs = nub xs == xs
       valsFrom locss = map (filter (/= 0)) [[valFinder loc | loc <- locs] | locs <- locss]
 
+branchSnapShot::SnapShot -> Constraint -> [SnapShot]
+branchSnapShot (valFinder, constraints) (loc,vs) = [(nextLevelValFinder v, sortPrunedConstraints v) | v <- vs]
+  where 
+    sortPrunedConstraints val = sortBy remaingValuesCompare $ prune (loc, val) constraints
+    nextLevelValFinder val = branchNextLevel valFinder (loc, val)
+    branchNextLevel valFinder cell@(loc,val) = update valFinder (loc,val)
+
 update::(Location -> Value) -> (Location, Value) -> Location -> Value 
 update valFinder (origloc, val) newloc = 
   if newloc == origloc then 
@@ -49,18 +68,8 @@ update valFinder (origloc, val) newloc =
   else 
     valFinder newloc 
 
-showSnapShot::SnapShot -> IO()
-showSnapShot (valueFinder, _) = showPotentialGrid valueFinder
-    where 
-      showPotentialGrid = showGrid . valueFinderToGrid
-      valueFinderToGrid valFinder = [[valFinder (r,c) | c <- positions] | r <- positions] 
 
-branchSnapShot::SnapShot -> Constraint -> [SnapShot]
-branchSnapShot (valFinder, constraints) (loc,vs) = [(nextLevelValFinder v, sortPrunedConstraints v) | v <- vs]
-  where 
-    sortPrunedConstraints val = sortBy remaingValuesCompare $ prune (loc, val) constraints
-    nextLevelValFinder val = branchNextLevel valFinder (loc, val)
-    branchNextLevel valFinder cell@(loc,val) = update valFinder (loc,val)
+
 
 prune::(Location,Value) -> [Constraint] -> [Constraint]
 prune _ [] = []
@@ -89,10 +98,9 @@ findConstraints valFinder loc@(r,c) = notInRow `intersect` notInColumn `intersec
     where 
         notInRow = stillToFind [valFinder loc | loc <- locsofrow r ]
         notInColumn = stillToFind [valFinder loc | loc <- locsofcol c]
-        notInSubgrid = stillToFind (valsInSubGrid valFinder loc)
+        notInSubgrid = stillToFind [valFinder loc' | loc' <- concat $ subgridsForLoc loc]
         stillToFind currentGroup = validvalues \\ currentGroup 
         validvalues = [1..9] 
-
 
 search::(SnapShot -> [SnapShot]) -> (SnapShot -> Bool) -> [SnapShot] -> [SnapShot]
 search children goal [] = []
@@ -109,21 +117,12 @@ searchBFS children goal (x:xs)
 noremaingvalues ::SnapShot -> Bool
 noremaingvalues node = null $ snd node
 
-solveNs::[SnapShot] -> [SnapShot]
-solveNs = search nextLevelSnapShots noremaingvalues 
-
-nextLevelSnapShots::SnapShot -> [SnapShot]
-nextLevelSnapShots (s,[]) = []
-nextLevelSnapShots (s,p:ps) = branchSnapShot (s,ps) p 
-
 valFinderFromGrid::Grid -> ValueAtLocation
 valFinderFromGrid vs = (\(r,c) -> (vs !! (r-1)) !! (c-1))
 
-solveAndShow::Grid -> IO[()]
-solveAndShow gr = solveShowNs (initSnapShot gr)
 
-solveShowNs::[SnapShot] -> IO[()]
-solveShowNs = sequence . fmap showSnapShot . solveNs
+
+
 
 emptyN::SnapShot
 emptyN = (\ _ -> 0, getconstraints (\ _ -> 0))
