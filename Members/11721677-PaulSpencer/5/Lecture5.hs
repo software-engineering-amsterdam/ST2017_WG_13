@@ -23,7 +23,6 @@ stdblocks =[[1..3],[4..6],[7..9]]
 nrcblocks = [[2..4],[6..8]]
 
 rowlocs, collocs,subgridlocs,allsubgridlocs::[[Location]]
---rowlocs, collocs::[[Location]]
 rowlocs = [[(r,c) | c <- positions] | r <- positions]
 collocs = [[(r,c) | r <- positions] | c <- positions]
 subgridlocs = [[(r, c) | r <- rs, c <- cs] | rs <- stdblocks, cs <- stdblocks ]
@@ -33,18 +32,14 @@ allsubgridlocs = subgridlocs ++ nrcgridlocs
 subgridsForLoc::Location -> [[Location]]
 subgridsForLoc loc = filter (elem loc) allsubgridlocs
 
-
-blockMember::Int -> [Int]
-blockMember x = concat $ filter (elem x) stdblocks 
+-- blockMember::Int -> [Int]
+-- blockMember x = concat $ filter (elem x) stdblocks 
 
 subGrid::ValueAtLocation -> Location -> [Value]
-subGrid valFinder (r,c) = [valFinder (r',c') | r' <- blockMember r, c' <- blockMember c]
+subGrid valFinder loc = [valFinder loc' | loc' <- concat $ subgridsForLoc loc]
 
 injective::Eq a => [a] -> Bool
 injective xs = nub xs == xs
-
-
-
 
 
 initSnapShot::Grid -> [SnapShot]
@@ -103,7 +98,7 @@ prune (oloc@(r,c),v) ((cloc@(x,y),zs):rest)
         nextPrune = prune (oloc,v) rest
 
 sameblock:: Location -> Location -> Bool
-sameblock (r,c) (x,y) = blockMember r == blockMember x && blockMember c == blockMember y 
+sameblock locl locr = any (==True) [sgl == sgr | sgl <- subgridsForLoc locl, sgr <- subgridsForLoc locr]
 
 openPositions::ValueAtLocation -> [(Row,Column)]
 openPositions valFinder = [(r,c) | r <- positions, c <- positions, valFinder (r,c) == 0]
