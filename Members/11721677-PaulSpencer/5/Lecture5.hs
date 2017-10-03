@@ -7,7 +7,7 @@ type Row         = Int
 type Column      = Int 
 type Value       = Int
 type Location    = (Row, Column)
-type FilledCell  = (Location, Value)
+type SolvedCell  = (Location, Value)
 type Grid        = [[Value]]
 
 type ValueAtLocation = Location -> Value
@@ -28,7 +28,7 @@ main = do
 --
 
 emptySnapShot::SnapShot
-emptySnapShot = (\ _ -> 0, getconstraints (\ _ -> 0))
+emptySnapShot = (\_ -> 0, getconstraints (\_ -> 0))
 
 getconstraints::ValueAtLocation -> [Constraint] 
 getconstraints valFinder = sortedConstraints  
@@ -41,30 +41,23 @@ showSnapShot::SnapShot -> IO()
 showSnapShot (valFinder, _) = showGrid $ map (map valFinder) collocs  
 
 branchSnapShot::SnapShot -> Constraint -> [SnapShot]
-branchSnapShot (valFinder, constraints) (loc,vs) = [(nextLevelValFinder v, sortPrunedConstraints v) | v <- vs]
+branchSnapShot (valFinder, constraints) (loc,vs) = [(getvalfinder v, sortPrunedConstraints v) | v <- vs]
   where 
+    getvalfinder val newloc = if newloc == loc then val else valFinder newloc
     sortPrunedConstraints val = sortBy remaingValuesCompare $ prune (loc, val) constraints
-    nextLevelValFinder val = branchNextLevel valFinder (loc, val)
-    branchNextLevel valFinder cell@(loc,val) = update valFinder (loc,val)
-    update valFinder (origloc, val) newloc = 
-      if newloc == origloc then 
-        val 
-      else 
-        valFinder newloc
 
 remaingValuesCompare::Constraint -> Constraint -> Ordering
 remaingValuesCompare (_,vs) (_,vs') = compare (length vs) (length vs')
 
-prune::(Location,Value) -> [Constraint] -> [Constraint]
+prune::SolvedCell -> [Constraint] -> [Constraint]
 prune _ [] = []
-prune (oloc@(r,c),v) ((cloc@(x,y),zs):rest)
-  | r == x                = trimConstraint
-  | c == y                = trimConstraint
-  | samesubgrid oloc cloc = trimConstraint
-  | otherwise             = (cloc,zs) : nextPrune
+prune slvd@(oloc,v) (cnstr@(cloc,vs):rest)
+  | shouldTrim oloc cloc = trimConstraint
+  | otherwise            = cnstr : nextPrune
       where
-        trimConstraint = (cloc,zs\\[v]) : nextPrune
-        nextPrune = prune (oloc,v) rest
+        trimConstraint = (cloc,vs\\[v]) : nextPrune
+        nextPrune = prune slvd rest
+        shouldTrim ol@(r, c) cl@(r',c') = r == r' || c == c' || samesubgrid ol cl
         samesubgrid l1 l2 = or [sg1 == sg2 | sg1 <- subgridsForLoc l1, sg2 <- subgridsForLoc l2]
 
 
