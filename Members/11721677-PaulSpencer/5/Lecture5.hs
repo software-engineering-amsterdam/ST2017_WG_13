@@ -50,7 +50,7 @@ findRemaining valFinder loc@(r,c) = notInRow `intersect` notInColumn `intersect`
 -- random Solve SnapShot
 
 randomSolveSnapshot::[SnapShot] -> IO [SnapShot]
-randomSolveSnapshot ss = rsearch randomNextSnapShot noVals (return ss)
+randomSolveSnapshot snapShot = rsearch randomNextSnapShot noVals (return snapShot)
   where
     noVals = (\(_,vs) -> null vs)
     randomNextSnapShot (valueFinder,cs) = do 
@@ -64,7 +64,15 @@ getRandomConstraints cs = getRandomItem (getConstraints cs)
     getConstraints constraints@(x:_) = takeWhile (sameNrRemaining x) constraints
     sameNrRemaining (_,xs) (_,ys) = length xs == length ys
 
-    
+getRandomItem::[a] -> IO [a]
+getRandomItem [] = return []
+getRandomItem xs = do 
+  index <- getStdRandom (randomR (0,maxi)) 
+  return [xs !! index]
+    where 
+      maxi = length xs - 1
+          
+
 rsearch::(SnapShot -> IO [SnapShot]) -> (SnapShot -> Bool) -> IO [SnapShot] -> IO [SnapShot]
 rsearch succ goal ioSnapShots = do 
   xs <- ioSnapShots 
@@ -74,8 +82,6 @@ rsearch succ goal ioSnapShots = do
       if (not . null) ys then return [head ys] else 
         if null (tail xs) then return [] else 
           rsearch succ goal (return $ tail xs)
-
-
 
 showSnapShot::SnapShot -> IO()
 showSnapShot (valFinder, _) = showGrid $ map (map valFinder) collocs  
@@ -97,11 +103,6 @@ prune slvd@(oloc,v) (cnstr@(cloc,vs):rest)
         shouldTrim ol@(r, c) cl@(r',c') = r == r' || c == c' || samesubgrid ol cl
         samesubgrid l1 l2 = or [sg1 == sg2 | sg1 <- subgridsForLoc l1, sg2 <- subgridsForLoc l2]
 
-
-
-
- 
-
 search::(SnapShot -> [SnapShot]) -> (SnapShot -> Bool) -> [SnapShot] -> [SnapShot]
 search children goal [] = []
 search children goal (x:xs) 
@@ -114,31 +115,8 @@ searchBFS children goal (x:xs)
   | goal x    = x : searchBFS children goal xs
   | otherwise = searchBFS children goal (xs ++ (children x))
 
-
-
 valFinderFromGrid::Grid -> ValueAtLocation
 valFinderFromGrid vs = (\(r,c) -> (vs !! (r-1)) !! (c-1))
-
-
-
-
-
-
-
-getRandomInt::Int -> IO Int
-getRandomInt n = getStdRandom (randomR (0,n))
-
-getRandomItem::[a] -> IO [a]
-getRandomItem [] = return []
-getRandomItem xs = do 
-  n <- getRandomInt maxi
-  return [xs !! n]
-    where 
-      maxi = length xs - 1
-
-
-
-
 
 -- position helpers
 positions::[Int]
@@ -276,8 +254,6 @@ example5 = [[1,0,0,0,0,0,0,0,0],
             [0,0,0,0,0,0,0,8,0],
             [0,0,0,0,0,0,0,0,9]]
 
-
-
 -- create random problem
 
 -- genRandomSudoku::IO SnapShot
@@ -324,8 +300,6 @@ example5 = [[1,0,0,0,0,0,0,0,0],
 --   return (minimalize n ys)
 --     where 
 --       xs = filledPositions (fst n)
-
-
 
 -- solveAndShow::Grid -> IO[()]
 -- solveAndShow grid = solveShowSnapShots $ initSnapShot grid
