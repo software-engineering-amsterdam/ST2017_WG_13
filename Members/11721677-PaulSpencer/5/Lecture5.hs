@@ -19,24 +19,24 @@ main::IO ()
 main = do 
   [randomSnapShot] <- randomSolveSnapshot [emptySnapShot]
   showSnapShot randomSnapShot
-  -- s  <- genProblem r
-  -- showSnapShot s
+  snapShot  <- genProblem randomSnapShot
+  showSnapShot snapShot
+
 
 -- create empty Grid
-
 emptySnapShot::SnapShot
 emptySnapShot = (\_ -> 0, getconstraints (\_ -> 0))
 
 getconstraints::ValueAtLocation -> [Constraint] 
 getconstraints valFinder = sortedConstraints  
     where 
-      sortedConstraints =  sortBy remaingValuesOrd constraintsForLoc
+      sortedConstraints =  sortBy possibilitiesOrd constraintsForLoc
       constraintsForLoc = [makeConstraint loc | loc <- openPositions]
       makeConstraint loc = (loc, findRemaining valFinder loc)
       openPositions = [(r,c) | r <- positions, c <- positions, valFinder (r,c) == 0]
 
-remaingValuesOrd::Constraint -> Constraint -> Ordering
-remaingValuesOrd (_,vs) (_,vs') = compare (length vs) (length vs')
+possibilitiesOrd::Constraint -> Constraint -> Ordering
+possibilitiesOrd (_,vs) (_,vs') = compare (length vs) (length vs')
 
 findRemaining::ValueAtLocation -> Location -> [Value]
 findRemaining valFinder loc@(r,c) = notInRow `intersect` notInColumn `intersect` notInSubgrid 
@@ -47,12 +47,12 @@ findRemaining valFinder loc@(r,c) = notInRow `intersect` notInColumn `intersect`
         stillToFind currentGroup = validvalues \\ currentGroup 
         validvalues = [1..9]
 
--- random Solve SnapShot
 
+-- fill Grid
 randomSolveSnapshot::[SnapShot] -> IO [SnapShot]
-randomSolveSnapshot snapShot = rsearch randomNextSnapShot noVals (return snapShot)
+randomSolveSnapshot snapShot = snapShotSearch randomNextSnapShot noPossibilities (return snapShot)
   where
-    noVals = (\(_,vs) -> null vs)
+    noPossibilities = (\(_,vs) -> null vs)
     randomNextSnapShot (valueFinder,cs) = do 
       xs <- getRandomConstraints cs
       if null xs then return [] else return (branchSnapShot (valueFinder,cs\\xs) (head xs))
@@ -67,56 +67,141 @@ getRandomConstraints cs = getRandomItem (getConstraints cs)
 getRandomItem::[a] -> IO [a]
 getRandomItem [] = return []
 getRandomItem xs = do 
-  index <- getStdRandom (randomR (0,maxi)) 
+  index <- getStdRandom $ randomR (0,(length xs - 1))
   return [xs !! index]
-    where 
-      maxi = length xs - 1
-          
 
-rsearch::(SnapShot -> IO [SnapShot]) -> (SnapShot -> Bool) -> IO [SnapShot] -> IO [SnapShot]
-rsearch succ goal ioSnapShots = do 
-  xs <- ioSnapShots 
-  if null xs then return [] else 
-    if goal (head xs) then return [head xs] else do 
-      ys <- rsearch succ goal (succ (head xs))
-      if (not . null) ys then return [head ys] else 
-        if null (tail xs) then return [] else 
-          rsearch succ goal (return $ tail xs)
-
-showSnapShot::SnapShot -> IO()
-showSnapShot (valFinder, _) = showGrid $ map (map valFinder) collocs  
+snapShotSearch::(SnapShot -> IO [SnapShot]) -> (SnapShot -> Bool) -> IO [SnapShot] -> IO [SnapShot]
+snapShotSearch nextSnapShot predicate snapShotsIO = do 
+  snapShots <- snapShotsIO 
+  nextSnapShots <- nextSnapShotsIO snapShots
+  handleSnapShot snapShots nextSnapShots
+    where
+      nothing = return []
+      nextSnapShotsIO ss = if null ss then nothing else snapShotSearch nextSnapShot predicate (nextSnapShot $ head ss)
+      handleSnapShot ss nxtss
+        | null ss             = nothing
+        | predicate (head ss) = return [head ss]
+        | (not . null) nxtss  = return [head nxtss]
+        | null (tail ss)      = nothing
+        | otherwise           = snapShotSearch nextSnapShot predicate (return $ tail ss)
 
 branchSnapShot::SnapShot -> Constraint -> [SnapShot]
 branchSnapShot (valFinder, constraints) (loc,vs) = [(getvalfinder v, sortPrunedConstraints v) | v <- vs]
   where 
     getvalfinder val newloc = if newloc == loc then val else valFinder newloc
-    sortPrunedConstraints val = sortBy remaingValuesOrd $ prune (loc, val) constraints
+    sortPrunedConstraints val = sortBy possibilitiesOrd $ reducePossibilities (loc, val) constraints
 
-prune::SolvedCell -> [Constraint] -> [Constraint]
-prune _ [] = []
-prune slvd@(oloc,v) (cnstr@(cloc,vs):rest)
-  | shouldTrim oloc cloc = trimConstraint
-  | otherwise            = cnstr : nextPrune
+reducePossibilities::SolvedCell -> [Constraint] -> [Constraint]
+reducePossibilities _ [] = []
+reducePossibilities solvedCell@(oloc,v) (constraint@(cloc,vs):constraints)
+  | shouldReduce oloc cloc = trimPossibilities : nextReduction
+  | otherwise            = constraint : nextReduction
       where
-        trimConstraint = (cloc,vs\\[v]) : nextPrune
-        nextPrune = prune slvd rest
-        shouldTrim ol@(r, c) cl@(r',c') = r == r' || c == c' || samesubgrid ol cl
-        samesubgrid l1 l2 = or [sg1 == sg2 | sg1 <- subgridsForLoc l1, sg2 <- subgridsForLoc l2]
+        trimPossibilities = (cloc,vs\\[v])
+        nextReduction = reducePossibilities solvedCell constraints
+        shouldReduce ol@(r, c) cl@(r',c') = inSameRow || inSameCol || inSameSubgrid
+          where
+            inSameRow = r == r'
+            inSameCol = c == c' 
+            inSameSubgrid = or [sg1 == sg2 | sg1 <- subgridsForLoc ol, sg2 <- subgridsForLoc cl]
 
-search::(SnapShot -> [SnapShot]) -> (SnapShot -> Bool) -> [SnapShot] -> [SnapShot]
-search children goal [] = []
-search children goal (x:xs) 
-  | goal x    = x : search children goal xs
-  | otherwise = search children goal ((children x) ++ xs)
+showSnapShot::SnapShot -> IO()
+showSnapShot (valFinder, _) = showGrid $ map (map valFinder) collocs  
 
-searchBFS::(SnapShot -> [SnapShot]) -> (SnapShot -> Bool) -> [SnapShot] -> [SnapShot]
-searchBFS children goal [] = []
-searchBFS children goal (x:xs) 
-  | goal x    = x : searchBFS children goal xs
-  | otherwise = searchBFS children goal (xs ++ (children x))
+-- remove items from Grid
+genProblem::SnapShot -> IO SnapShot
+genProblem snapShot@(valFinder,_) = do 
+  ys <- randomizeLocations solvedLocations
+  return (minimalize snapShot ys)
+  where 
+    solvedLocations = [loc | loc <- concat $ rowlocs, valFinder loc /= 0]
 
-valFinderFromGrid::Grid -> ValueAtLocation
-valFinderFromGrid vs = (\(r,c) -> (vs !! (r-1)) !! (c-1))
+randomizeLocations:: [Location] -> IO [Location]
+randomizeLocations locs = do 
+  rloc <- getRandomItem locs 
+  if null rloc then 
+    return []
+  else do 
+    rlocs <- randomizeLocations (locs\\rloc)
+    return (head rloc:rlocs)
+
+minimalize::SnapShot -> [Location] -> SnapShot
+minimalize snapShot [] = snapShot
+minimalize snapShot@(valFinder,_) (loc:locs) 
+  | uniqueSolution snapShot' = minimalize snapShot' locs
+  | otherwise                = minimalize snapShot  locs
+    where 
+      snapShot' = removeSnapShot  
+      removeSnapShot = (s, getconstraints s) 
+        where 
+          s = eraseS valFinder loc 
+
+uniqueSolution = undefined
+
+
+eraseS::ValueAtLocation -> (Row,Column) -> ValueAtLocation
+eraseS s (r,c) (x,y) | (r,c) == (x,y) = 0
+                     | otherwise      = s (x,y)
+
+
+-- uniqueSolution::SnapShot -> Bool
+-- uniqueSolution node = singleton (solveNs [node]) where 
+--   singleton [] = False
+--   singleton [x] = True
+--   singleton (x:y:zs) = False
+
+
+
+-- create random problem
+
+-- genRandomSudoku::IO SnapShot
+-- genRandomSudoku = do [r] <- randomSolveSnapShot [emptySnapShot]
+--                      return r
+
+
+-- randomS = genRandomSudoku >>= showSnapShot
+
+
+
+
+
+
+
+
+
+
+
+-- solveAndShow::Grid -> IO[()]
+-- solveAndShow grid = solveShowSnapShots $ initSnapShot grid
+--   where 
+--     solveShowSnapShots sss = (sequence . fmap showSnapShot . solveSnapShots) sss
+--     solveSnapShots sss = search nextLevelSnapShots noVals sss
+--     nextLevelSnapShots (s,[]) = []
+--     nextLevelSnapShots (s,p:ps) = branchSnapShot (s,ps) p 
+--     noVals = (\(_,vs) -> null vs)
+
+-- initSnapShot::Grid -> [SnapShot]
+-- initSnapShot grid = 
+--   if (not . consistentGrid) valFinder then [] else [(valFinder, getconstraints valFinder)]
+--     where 
+--       valFinder = valFinderFromGrid grid
+--       consistentGrid valFinder = and $ (consisentRows ++ consisentCols ++ consisentSubs)
+--       consisentRows = map injective $ valsFrom rowlocs
+--       consisentCols = map injective $ valsFrom collocs
+--       consisentSubs = map injective $ valsFrom allsubgridlocs
+--       injective xs = nub xs == xs
+--       valsFrom locss = map (filter (/= 0)) [[valFinder loc | loc <- locs] | locs <- locss]
+
+        
+-- valFinderFromGrid::Grid -> ValueAtLocation
+-- valFinderFromGrid vs = (\(r,c) -> (vs !! (r-1)) !! (c-1))
+
+-- search::(SnapShot -> [SnapShot]) -> (SnapShot -> Bool) -> [SnapShot] -> [SnapShot]
+-- search children goal [] = []
+-- search children goal (x:xs) 
+--   | goal x    = x : search children goal xs
+--   | otherwise = search children goal ((children x) ++ xs)
+
 
 -- position helpers
 positions::[Int]
@@ -254,70 +339,3 @@ example5 = [[1,0,0,0,0,0,0,0,0],
             [0,0,0,0,0,0,0,8,0],
             [0,0,0,0,0,0,0,0,9]]
 
--- create random problem
-
--- genRandomSudoku::IO SnapShot
--- genRandomSudoku = do [r] <- randomSolveSnapShot [emptySnapShot]
---                      return r
-
--- randomize::Eq a => [a] -> IO [a]
--- randomize xs = do y <- getRandomItem xs 
---                   if null y 
---                     then return []
---                     else do ys <- randomize (xs\\y)
---                             return (head y:ys)
--- randomS = genRandomSudoku >>= showSnapShot
-
--- uniqueSol::SnapShot -> Bool
--- uniqueSol node = singleton (solveNs [node]) where 
---   singleton [] = False
---   singleton [x] = True
---   singleton (x:y:zs) = False
-
--- eraseS::ValueAtLocation -> (Row,Column) -> ValueAtLocation
--- eraseS s (r,c) (x,y) | (r,c) == (x,y) = 0
---                      | otherwise      = s (x,y)
-
--- eraseN::SnapShot -> (Row,Column) -> SnapShot
--- eraseN n (r,c) = (s, getconstraints s) 
---   where 
---     s = eraseS (fst n) (r,c) 
-
--- minimalize::SnapShot -> [(Row,Column)] -> SnapShot
--- minimalize n [] = n
--- minimalize n ((r,c):rcs) 
---   | uniqueSol n' = minimalize n' rcs
---   | otherwise    = minimalize n  rcs
---     where 
---       n' = eraseN n (r,c)
-
--- filledPositions::ValueAtLocation -> [Location]
--- filledPositions s = [(r,c) | r <- positions, c <- positions, s (r,c) /= 0]
-
--- genProblem::SnapShot -> IO SnapShot
--- genProblem n = do 
---   ys <- randomize xs
---   return (minimalize n ys)
---     where 
---       xs = filledPositions (fst n)
-
--- solveAndShow::Grid -> IO[()]
--- solveAndShow grid = solveShowSnapShots $ initSnapShot grid
---   where 
---     solveShowSnapShots sss = (sequence . fmap showSnapShot . solveSnapShots) sss
---     solveSnapShots sss = search nextLevelSnapShots noVals sss
---     nextLevelSnapShots (s,[]) = []
---     nextLevelSnapShots (s,p:ps) = branchSnapShot (s,ps) p 
---     noVals = (\(_,vs) -> null vs)
-
--- initSnapShot::Grid -> [SnapShot]
--- initSnapShot grid = 
---   if (not . consistentGrid) valFinder then [] else [(valFinder, getconstraints valFinder)]
---     where 
---       valFinder = valFinderFromGrid grid
---       consistentGrid valFinder = and $ (consisentRows ++ consisentCols ++ consisentSubs)
---       consisentRows = map injective $ valsFrom rowlocs
---       consisentCols = map injective $ valsFrom collocs
---       consisentSubs = map injective $ valsFrom allsubgridlocs
---       injective xs = nub xs == xs
---       valsFrom locss = map (filter (/= 0)) [[valFinder loc | loc <- locs] | locs <- locss]
