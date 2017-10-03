@@ -14,18 +14,15 @@ type ValueAtLocation = Location -> Value
 type Constraint = (Location,[Value])
 type SnapShot = (ValueAtLocation,[Constraint])
 
-
 -- run program
 main::IO ()
 main = do 
-  [randomSnapShot] <- rsolveNs [emptySnapShot]
+  [randomSnapShot] <- randomSolveSnapshot [emptySnapShot]
   showSnapShot randomSnapShot
   -- s  <- genProblem r
   -- showSnapShot s
 
-
-
---
+-- create empty Grid
 
 emptySnapShot::SnapShot
 emptySnapShot = (\_ -> 0, getconstraints (\_ -> 0))
@@ -33,9 +30,52 @@ emptySnapShot = (\_ -> 0, getconstraints (\_ -> 0))
 getconstraints::ValueAtLocation -> [Constraint] 
 getconstraints valFinder = sortedConstraints  
     where 
-      sortedConstraints =  sortBy remaingValuesCompare constraintsForLoc
-      constraintsForLoc = [(loc, findConstraints valFinder loc) | loc <- openPositions valFinder]
-      openPositions valFinder = [(r,c) | r <- positions, c <- positions, valFinder (r,c) == 0]
+      sortedConstraints =  sortBy remaingValuesOrd constraintsForLoc
+      constraintsForLoc = [makeConstraint loc | loc <- openPositions]
+      makeConstraint loc = (loc, findRemaining valFinder loc)
+      openPositions = [(r,c) | r <- positions, c <- positions, valFinder (r,c) == 0]
+
+remaingValuesOrd::Constraint -> Constraint -> Ordering
+remaingValuesOrd (_,vs) (_,vs') = compare (length vs) (length vs')
+
+findRemaining::ValueAtLocation -> Location -> [Value]
+findRemaining valFinder loc@(r,c) = notInRow `intersect` notInColumn `intersect` notInSubgrid 
+    where 
+        notInRow = stillToFind [valFinder loc | loc <- locsInRow r ]
+        notInColumn = stillToFind [valFinder loc | loc <- locsInCol c]
+        notInSubgrid = stillToFind [valFinder loc' | loc' <- concat $ subgridsForLoc loc]
+        stillToFind currentGroup = validvalues \\ currentGroup 
+        validvalues = [1..9]
+
+-- random Solve SnapShot
+
+randomSolveSnapshot::[SnapShot] -> IO [SnapShot]
+randomSolveSnapshot ss = rsearch randomNextSnapShot noVals (return ss)
+  where
+    noVals = (\(_,vs) -> null vs)
+    randomNextSnapShot (valueFinder,cs) = do 
+      xs <- getRandomConstraints cs
+      if null xs then return [] else return (branchSnapShot (valueFinder,cs\\xs) (head xs))
+
+getRandomConstraints::[Constraint] -> IO [Constraint]
+getRandomConstraints cs = getRandomItem (getConstraints cs) 
+  where 
+    getConstraints [] = []
+    getConstraints constraints@(x:_) = takeWhile (sameNrRemaining x) constraints
+    sameNrRemaining (_,xs) (_,ys) = length xs == length ys
+
+    
+rsearch::(SnapShot -> IO [SnapShot]) -> (SnapShot -> Bool) -> IO [SnapShot] -> IO [SnapShot]
+rsearch succ goal ioSnapShots = do 
+  xs <- ioSnapShots 
+  if null xs then return [] else 
+    if goal (head xs) then return [head xs] else do 
+      ys <- rsearch succ goal (succ (head xs))
+      if (not . null) ys then return [head ys] else 
+        if null (tail xs) then return [] else 
+          rsearch succ goal (return $ tail xs)
+
+
 
 showSnapShot::SnapShot -> IO()
 showSnapShot (valFinder, _) = showGrid $ map (map valFinder) collocs  
@@ -44,10 +84,7 @@ branchSnapShot::SnapShot -> Constraint -> [SnapShot]
 branchSnapShot (valFinder, constraints) (loc,vs) = [(getvalfinder v, sortPrunedConstraints v) | v <- vs]
   where 
     getvalfinder val newloc = if newloc == loc then val else valFinder newloc
-    sortPrunedConstraints val = sortBy remaingValuesCompare $ prune (loc, val) constraints
-
-remaingValuesCompare::Constraint -> Constraint -> Ordering
-remaingValuesCompare (_,vs) (_,vs') = compare (length vs) (length vs')
+    sortPrunedConstraints val = sortBy remaingValuesOrd $ prune (loc, val) constraints
 
 prune::SolvedCell -> [Constraint] -> [Constraint]
 prune _ [] = []
@@ -61,14 +98,9 @@ prune slvd@(oloc,v) (cnstr@(cloc,vs):rest)
         samesubgrid l1 l2 = or [sg1 == sg2 | sg1 <- subgridsForLoc l1, sg2 <- subgridsForLoc l2]
 
 
-findConstraints::ValueAtLocation -> Location -> [Value]
-findConstraints valFinder loc@(r,c) = notInRow `intersect` notInColumn `intersect` notInSubgrid 
-    where 
-        notInRow = stillToFind [valFinder loc | loc <- locsofrow r ]
-        notInColumn = stillToFind [valFinder loc | loc <- locsofcol c]
-        notInSubgrid = stillToFind [valFinder loc' | loc' <- concat $ subgridsForLoc loc]
-        stillToFind currentGroup = validvalues \\ currentGroup 
-        validvalues = [1..9] 
+
+
+ 
 
 search::(SnapShot -> [SnapShot]) -> (SnapShot -> Bool) -> [SnapShot] -> [SnapShot]
 search children goal [] = []
@@ -82,8 +114,7 @@ searchBFS children goal (x:xs)
   | goal x    = x : searchBFS children goal xs
   | otherwise = searchBFS children goal (xs ++ (children x))
 
-noremaingvalues ::SnapShot -> Bool
-noremaingvalues node = null $ snd node
+
 
 valFinderFromGrid::Grid -> ValueAtLocation
 valFinderFromGrid vs = (\(r,c) -> (vs !! (r-1)) !! (c-1))
@@ -105,33 +136,9 @@ getRandomItem xs = do
     where 
       maxi = length xs - 1
 
-sameNrRemaining::Constraint -> Constraint -> Bool
-sameNrRemaining (_,xs) (_,ys) = length xs == length ys
 
-getRandomConstraints::[Constraint] -> IO [Constraint]
-getRandomConstraints cs = getRandomItem (getConstraints cs) 
-  where 
-    getConstraints [] = []
-    getConstraints (x:xs) = takeWhile (sameNrRemaining x) (x:xs)
 
-rsuccNode::SnapShot -> IO [SnapShot]
-rsuccNode (valueFinder,cs) = do 
-  xs <- getRandomConstraints cs
-  if null xs then return [] else 
-    return (branchSnapShot (valueFinder,cs\\xs) (head xs))
 
-rsolveNs::[SnapShot] -> IO [SnapShot]
-rsolveNs ns = rsearch rsuccNode noremaingvalues (return ns)
-
-rsearch::(node -> IO [node]) -> (node -> Bool) -> IO [node] -> IO [node]
-rsearch succ goal ionodes = do 
-  xs <- ionodes 
-  if null xs then return [] else 
-    if goal (head xs) then return [head xs] else do 
-      ys <- rsearch succ goal (succ (head xs))
-      if (not . null) ys then return [head ys] else 
-        if null (tail xs) then return [] else 
-          rsearch succ goal (return $ tail xs)
 
 -- position helpers
 positions::[Int]
@@ -151,11 +158,11 @@ allsubgridlocs = subgridlocs ++ nrcgridlocs
 subgridsForLoc::Location -> [[Location]]
 subgridsForLoc loc = filter (elem loc) allsubgridlocs
 
-locsofrow::Int -> [Location]
-locsofrow row = rowlocs !! (row-1)
+locsInRow::Int -> [Location]
+locsInRow row = rowlocs !! (row-1)
 
-locsofcol::Int -> [Location]
-locsofcol col = rowlocs !! (col-1)
+locsInCol::Int -> [Location]
+locsInCol col = collocs !! (col-1)
 
 --- Display Grid
 
@@ -274,7 +281,7 @@ example5 = [[1,0,0,0,0,0,0,0,0],
 -- create random problem
 
 -- genRandomSudoku::IO SnapShot
--- genRandomSudoku = do [r] <- rsolveNs [emptySnapShot]
+-- genRandomSudoku = do [r] <- randomSolveSnapShot [emptySnapShot]
 --                      return r
 
 -- randomize::Eq a => [a] -> IO [a]
