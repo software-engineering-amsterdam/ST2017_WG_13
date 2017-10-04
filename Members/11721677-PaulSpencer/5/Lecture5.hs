@@ -2,6 +2,7 @@ module Lecture5 where
 import Data.List
 import Data.Maybe
 import System.Random
+import Debug.Trace
 
 type Row         = Int 
 type Column      = Int 
@@ -85,10 +86,16 @@ snapShotSearch nextSnapShot predicate snapShotsIO = do
         | otherwise           = snapShotSearch nextSnapShot predicate (return $ tail ss)
 
 branchSnapShot::SnapShot -> Constraint -> [SnapShot]
-branchSnapShot (valFinder, constraints) (loc,vs) = [(getvalfinder v, sortPrunedConstraints v) | v <- vs]
+branchSnapShot (valFinder, constraints) (loc,vs) = [(getvalfinder v, sortedConstraints v) | v <- vs]
   where 
     getvalfinder val newloc = if newloc == loc then val else valFinder newloc
-    sortPrunedConstraints val = sortBy possibilitiesOrd $ reducePossibilities (loc, val) constraints
+    sortedConstraints val = sortBy possibilitiesOrd $ reducePossibilities (loc, val) constraints
+
+-- earlyTeminate::SnapShot -> Bool
+-- earlyTeminate ss = uniqueRectangle ss
+
+-- uniqueRectangle:: SnapShot -> Bool
+    
 
 reducePossibilities::SolvedCell -> [Constraint] -> [Constraint]
 reducePossibilities _ [] = []
@@ -104,30 +111,7 @@ reducePossibilities solvedCell@(oloc,v) (constraint@(cloc,vs):constraints)
             inSameCol = c == c' 
             inSameSubgrid = or [sg1 == sg2 | sg1 <- subgridsForLoc ol, sg2 <- subgridsForLoc cl]
 
--- strategies from http://www.sudokuwiki.org
-nakedSingle = undefined
-nakedDouble = undefined
-nakedTripple = undefined
-nakedsubSet = undefined
-hiddenSingle = undefined
-hiddenDouble = undefined
-hiddenTripple = undefined
-hiddenQuads = undefined
-intersectionRemovalPointingPairs = undefined
-intersectionRemovalPointingTripples = undefined
-xwing = undefined 
-singlesChain = undefined
-ywing = undefined
-swordfish = undefined
-xyzwing = undefined
-remotePairs = undefined
-biValueUniversalGrave =undefined
-xcycled = undefined
-medusa = undefined
-jellyfish = undefined
-wxyzwing = undefined
-xychains = undefined
-alignedPairExclusion = undefined
+
 
 showSnapShot::SnapShot -> IO()
 showSnapShot (valFinder, _) = showGrid $ map (map valFinder) collocs  
@@ -161,11 +145,13 @@ minimalize snapShot@(valFinder,_) (loc:locs)
 uniqueSolution::SnapShot -> Bool
 uniqueSolution snapShot = length (solveSnapShots [snapShot]) == 1
 
-solveSnapShots sss = searchBFS nextLevelSnapShots noVals sss
+solveSnapShots::[SnapShot] -> [SnapShot]
+solveSnapShots sss = searchDFS nextLevelSnapShots noVals sss
     where 
-      nextLevelSnapShots (s,[]) = []
-      nextLevelSnapShots (s,p:ps) = branchSnapShot (s,ps) p 
+      nextLevelSnapShots (_,[]) = []
+      nextLevelSnapShots (valFinder,p:ps) = branchSnapShot (valFinder,ps) p 
       noVals = (\(_,vs) -> null vs)
+
 
 searchDFS::(SnapShot -> [SnapShot]) -> (SnapShot -> Bool) -> [SnapShot] -> [SnapShot]
 searchDFS children goal [] = []
@@ -351,3 +337,51 @@ exampleNrc1 =   [[2,7,5,0,8,3,4,9,6],
             [1,5,8,9,6,7,2,3,4],
             [3,6,7,4,2,1,9,5,8],
             [9,2,4,8,3,5,7,6,1]]
+
+exampleRec1::Grid -- (2,5) matching rectangles cannot be unique
+exampleRec1 = [[2,7,5,1,8,3,4,9,6],
+               [8,4,1,0,9,6,3,7,0],
+               [6,3,9,0,7,4,8,1,0],
+               [4,8,6,7,1,9,5,2,3],
+               [5,9,3,6,4,2,1,8,7],
+               [7,1,2,3,5,8,6,4,9],
+               [1,5,8,9,6,7,2,3,4],
+               [3,6,7,4,2,1,9,5,8],
+               [9,2,4,8,3,5,7,6,1]]
+--
+exampleRec2::Grid
+exampleRec2 = [[2,7,5,1,8,3,4,9,6],
+               [8,4,1,5,9,6,3,7,2],
+               [6,3,9,2,7,4,8,1,5],
+               [4,8,6,0,1,0,5,2,3],
+               [5,9,3,6,4,2,1,8,7],
+               [7,1,2,3,5,8,6,4,9],
+               [1,5,8,0,6,0,2,3,4],
+               [3,6,7,4,2,1,9,5,8],
+               [9,2,4,8,3,5,7,6,1]]
+
+
+-- solving strategies from http://www.sudokuwiki.org
+nakedSingle = undefined
+nakedDouble = undefined
+nakedTripple = undefined
+nakedsubSet = undefined
+hiddenSingle = undefined
+hiddenDouble = undefined
+hiddenTripple = undefined
+hiddenQuads = undefined
+intersectionRemovalPointingPairs = undefined
+intersectionRemovalPointingTripples = undefined
+xwing = undefined 
+singlesChain = undefined
+ywing = undefined
+swordfish = undefined
+xyzwing = undefined
+remotePairs = undefined
+biValueUniversalGrave =undefined
+xcycled = undefined
+medusa = undefined
+jellyfish = undefined
+wxyzwing = undefined
+xychains = undefined
+alignedPairExclusion = undefined
