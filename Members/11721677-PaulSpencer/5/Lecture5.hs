@@ -156,9 +156,21 @@ solveSnapShots sss = searchDFS nextLevelSnapShots noVals sss
 searchDFS::(SnapShot -> [SnapShot]) -> (SnapShot -> Bool) -> [SnapShot] -> [SnapShot]
 searchDFS children goal [] = []
 searchDFS children goal (x:xs) 
-  | goal x    = x : searchDFS children goal xs
+  | goal x    = (cleanConstraints x) : searchDFS children goal xs
   | otherwise = searchDFS children goal ((children x) ++ xs)
   
+cleanConstraints::SnapShot -> SnapShot
+cleanConstraints snapShot@(valFinder,constraints)
+  -- | hasNakedSingles constraints = cleanConstraints (valFinder, cleanNakedSingles constraints)
+  | otherwise = snapShot
+
+hasNakedSingles::[Constraint] -> Bool
+hasNakedSingles constraints = any (==1) $ map (length . snd) constraints
+cleanNakedSingles::[Constraint] -> [Constraint]
+cleanNakedSingles constraints = constraints
+
+--type Constraint = (Location,[Value])
+
 searchBFS::(SnapShot -> [SnapShot]) -> (SnapShot -> Bool) -> [SnapShot] -> [SnapShot]
 searchBFS children goal [] = []
 searchBFS children goal (x:xs) 
