@@ -25,27 +25,46 @@ main = do
 
 -- create empty Grid
 emptySnapShot::SnapShot
-emptySnapShot = (\_ -> 0, getconstraints (\_ -> 0))
+emptySnapShot = (\_ -> 0, cleanconstraints $ getconstraints (\_ -> 0))
+
+cleanconstraints::[Constraint] -> [Constraint]
+cleanconstraints cs = cs
+
+-- subgridsForLoc::Location -> [[Location]]
+-- subgridsForLoc loc = filter (elem loc) allsubgridlocs
+
+-- locsInRow::Int -> [Location]
+-- locsInRow row = rowlocs !! (row-1)
+
+-- locsInCol::Int -> [Location]
+-- locsInCol col = collocs !! (col-1)
+
+
 
 getconstraints::ValueAtLocation -> [Constraint] 
-getconstraints valFinder = sortedConstraints  
+getconstraints valFinder = sortByConstraintVals allConstraints  
     where 
-      sortedConstraints =  sortBy possibilitiesOrd constraintsForLoc
-      constraintsForLoc = [makeConstraint loc | loc <- openPositions]
-      makeConstraint loc = (loc, findRemaining valFinder loc)
-      openPositions = [(r,c) | r <- positions, c <- positions, valFinder (r,c) == 0]
+      allConstraints = [makeConstraint loc | loc <- openPositions]
+      openPositions = [loc | loc <- alllocs, valFinder loc == 0]
+      makeConstraint loc = (loc, getConstraintValues valFinder loc)
 
-possibilitiesOrd::Constraint -> Constraint -> Ordering
-possibilitiesOrd (_,vs) (_,vs') = compare (length vs) (length vs')
+sortByConstraintVals::[Constraint] -> [Constraint] 
+sortByConstraintVals = sortBy (\(_,c1) (_,c2) -> compare (length c1) (length $ c2))
 
-findRemaining::ValueAtLocation -> Location -> [Value]
-findRemaining valFinder loc@(r,c) = notInRow `intersect` notInColumn `intersect` notInSubgrid 
+getConstraintValues::ValueAtLocation -> Location -> [Value]
+getConstraintValues valFinder loc@(r,c) = wipeOutExisting
     where 
+        wipeOutExisting = notInRow `intersect` notInColumn `intersect` notInSubgrid 
         notInRow = stillToFind [valFinder loc | loc <- locsInRow r ]
         notInColumn = stillToFind [valFinder loc | loc <- locsInCol c]
         notInSubgrid = stillToFind [valFinder loc' | loc' <- concat $ subgridsForLoc loc]
         stillToFind currentGroup = validvalues \\ currentGroup 
         validvalues = [1..9]
+
+cleanConstraints::SnapShot -> SnapShot
+cleanConstraints snapShot@(valFinder,constraints)
+  | hasNakedSingles constraints = cleanConstraints (valFinder, cleanNakedSingles constraints)
+  | otherwise = snapShot
 
 
 -- fill Grid
@@ -58,10 +77,10 @@ randomSolveSnapshot snapShot = snapShotSearch randomNextSnapShot noPossibilities
       if null xs then return [] else return (branchSnapShot (valueFinder,cs\\xs) (head xs))
 
 getRandomConstraints::[Constraint] -> IO [Constraint]
-getRandomConstraints cs = getRandomItem (getConstraints cs) 
+getRandomConstraints cs = getRandomItem (getsamesizedconstraints cs) 
   where 
-    getConstraints [] = []
-    getConstraints constraints@(x:_) = takeWhile (sameNrRemaining x) constraints
+    getsamesizedconstraints [] = []
+    getsamesizedconstraints constraints@(x:_) = takeWhile (sameNrRemaining x) constraints
     sameNrRemaining (_,xs) (_,ys) = length xs == length ys
 
 getRandomItem::[a] -> IO [a]
@@ -89,13 +108,7 @@ branchSnapShot::SnapShot -> Constraint -> [SnapShot]
 branchSnapShot (valFinder, constraints) (loc,vs) = [(getvalfinder v, sortedConstraints v) | v <- vs]
   where 
     getvalfinder val newloc = if newloc == loc then val else valFinder newloc
-    sortedConstraints val = sortBy possibilitiesOrd $ reducePossibilities (loc, val) constraints
-
--- earlyTeminate::SnapShot -> Bool
--- earlyTeminate ss = uniqueRectangle ss
-
--- uniqueRectangle:: SnapShot -> Bool
-    
+    sortedConstraints val = sortByConstraintVals $ reducePossibilities (loc, val) constraints
 
 reducePossibilities::SolvedCell -> [Constraint] -> [Constraint]
 reducePossibilities _ [] = []
@@ -111,8 +124,6 @@ reducePossibilities solvedCell@(oloc,v) (constraint@(cloc,vs):constraints)
             inSameCol = c == c' 
             inSameSubgrid = or [sg1 == sg2 | sg1 <- subgridsForLoc ol, sg2 <- subgridsForLoc cl]
 
-
-
 showSnapShot::SnapShot -> IO()
 showSnapShot (valFinder, _) = showGrid $ map (map valFinder) collocs  
 
@@ -122,7 +133,7 @@ genProblem snapShot@(valFinder,_) = do
   ys <- randomizeLocations solvedLocations
   return (minimalize snapShot ys)
   where 
-    solvedLocations = [loc | loc <- concat $ rowlocs, valFinder loc /= 0]
+    solvedLocations = [loc | loc <- alllocs, valFinder loc /= 0]
 
 randomizeLocations:: [Location] -> IO [Location]
 randomizeLocations locs = do 
@@ -152,18 +163,12 @@ solveSnapShots sss = searchDFS nextLevelSnapShots noVals sss
       nextLevelSnapShots (valFinder,p:ps) = branchSnapShot (valFinder,ps) p 
       noVals = (\(_,vs) -> null vs)
 
-
 searchDFS::(SnapShot -> [SnapShot]) -> (SnapShot -> Bool) -> [SnapShot] -> [SnapShot]
 searchDFS children goal [] = []
 searchDFS children goal (x:xs) 
-  | goal x    = (cleanConstraints x) : searchDFS children goal xs
+  | goal x    = x : searchDFS children goal xs
   | otherwise = searchDFS children goal ((children x) ++ xs)
   
-cleanConstraints::SnapShot -> SnapShot
-cleanConstraints snapShot@(valFinder,constraints)
-  -- | hasNakedSingles constraints = cleanConstraints (valFinder, cleanNakedSingles constraints)
-  | otherwise = snapShot
-
 hasNakedSingles::[Constraint] -> Bool
 hasNakedSingles constraints = any (==1) $ map (length . snd) constraints
 cleanNakedSingles::[Constraint] -> [Constraint]
@@ -184,6 +189,9 @@ positions = [1..9]
 stdblocks,nrcblocks::[[Int]]
 stdblocks =[[1..3],[4..6],[7..9]]
 nrcblocks = [[2..4],[6..8]]
+
+alllocs::[Location]
+alllocs = [(r,c) | r <- positions, c <- positions]
 
 rowlocs, collocs,subgridlocs,allsubgridlocs::[[Location]]
 rowlocs = [[(r,c) | c <- positions] | r <- positions]
@@ -352,25 +360,25 @@ exampleNrc1 =   [[2,7,5,0,8,3,4,9,6],
 
 exampleRec1::Grid -- (2,5) matching rectangles cannot be unique
 exampleRec1 = [[2,7,5,1,8,3,4,9,6],
-               [8,4,1,0,9,6,3,7,0],
-               [6,3,9,0,7,4,8,1,0],
-               [4,8,6,7,1,9,5,2,3],
-               [5,9,3,6,4,2,1,8,7],
-               [7,1,2,3,5,8,6,4,9],
-               [1,5,8,9,6,7,2,3,4],
-               [3,6,7,4,2,1,9,5,8],
-               [9,2,4,8,3,5,7,6,1]]
+                [8,4,1,0,9,6,3,7,0],
+                [6,3,9,0,7,4,8,1,0],
+                [4,8,6,7,1,9,5,2,3],
+                [5,9,3,6,4,2,1,8,7],
+                [7,1,2,3,5,8,6,4,9],
+                [1,5,8,9,6,7,2,3,4],
+                [3,6,7,4,2,1,9,5,8],
+                [9,2,4,8,3,5,7,6,1]]
 --
 exampleRec2::Grid
 exampleRec2 = [[2,7,5,1,8,3,4,9,6],
-               [8,4,1,5,9,6,3,7,2],
-               [6,3,9,2,7,4,8,1,5],
-               [4,8,6,0,1,0,5,2,3],
-               [5,9,3,6,4,2,1,8,7],
-               [7,1,2,3,5,8,6,4,9],
-               [1,5,8,0,6,0,2,3,4],
-               [3,6,7,4,2,1,9,5,8],
-               [9,2,4,8,3,5,7,6,1]]
+                [8,4,1,5,9,6,3,7,2],
+                [6,3,9,2,7,4,8,1,5],
+                [4,8,6,0,1,0,5,2,3],
+                [5,9,3,6,4,2,1,8,7],
+                [7,1,2,3,5,8,6,4,9],
+                [1,5,8,0,6,0,2,3,4],
+                [3,6,7,4,2,1,9,5,8],
+                [9,2,4,8,3,5,7,6,1]]
 
 
 -- solving strategies from http://www.sudokuwiki.org
