@@ -25,24 +25,11 @@ main = do
 
 -- create empty Grid
 emptySnapShot::SnapShot
-emptySnapShot = (\_ -> 0, cleanconstraints $ getconstraints (\_ -> 0))
-
-cleanconstraints::[Constraint] -> [Constraint]
-cleanconstraints cs = cs
-
--- subgridsForLoc::Location -> [[Location]]
--- subgridsForLoc loc = filter (elem loc) allsubgridlocs
-
--- locsInRow::Int -> [Location]
--- locsInRow row = rowlocs !! (row-1)
-
--- locsInCol::Int -> [Location]
--- locsInCol col = collocs !! (col-1)
-
-
+emptySnapShot = (\_ -> 0, getconstraints (\_ -> 0))
+--emptySnapShot = (\_ -> 0, getconstraints (\_ -> 0))
 
 getconstraints::ValueAtLocation -> [Constraint] 
-getconstraints valFinder = sortByConstraintVals allConstraints  
+getconstraints valFinder = sortByConstraintVals $ cleanconstraints allConstraints  
     where 
       allConstraints = [makeConstraint loc | loc <- openPositions]
       openPositions = [loc | loc <- alllocs, valFinder loc == 0]
@@ -61,10 +48,45 @@ getConstraintValues valFinder loc@(r,c) = wipeOutExisting
         stillToFind currentGroup = validvalues \\ currentGroup 
         validvalues = [1..9]
 
-cleanConstraints::SnapShot -> SnapShot
-cleanConstraints snapShot@(valFinder,constraints)
-  | hasNakedSingles constraints = cleanConstraints (valFinder, cleanNakedSingles constraints)
-  | otherwise = snapShot
+-- constraint cleaners
+
+cleanconstraints::[Constraint] -> [Constraint]
+cleanconstraints cs = cs
+
+-- cleanNakedSingle::[Constraint] -> [Constraint]
+-- cleanNakedSingle constraints@(loc, vs) = (loc, values \\ (otherNakedSingles constraints loc))
+
+cleanNakedSingles::[Constraint] -> [Constraint]
+cleanNakedSingles constraints = map (cleanNakedSingle constraints) constraints
+
+cleanNakedSingle::[Constraint] -> Constraint -> Constraint
+cleanNakedSingle constraints (loc, vs) = (loc, (vs \\ (otherNakedSingles constraints loc)))
+
+otherNakedSingles :: [Constraint] -> Location -> [Value]
+otherNakedSingles constraints loc = fndNkdSngl $ (getAllConstraintsForLoc constraints loc)
+
+fndNkdSngl::[Constraint] -> [Value]
+fndNkdSngl constraints = concat $ filter (\x -> length x == 1) $ map snd constraints 
+
+--fndNkdDbl constraints =  $ filter (\x -> length x == 2) $ map snd constraints
+
+getAllConstraintsForLoc::[Constraint] -> Location -> [Constraint]
+getAllConstraintsForLoc constraints loc =  filter (consFilter (getAllLocsForLoc loc)) constraints
+
+consFilter::[Location] -> Constraint -> Bool
+consFilter locs (loc,_) = loc `elem` locs
+
+getAllLocsForLoc::Location -> [Location]
+getAllLocsForLoc loc@(r,c) = (nub $ locsInRow r ++ locsInCol c ++ (concat $ subgridsForLoc loc)) \\ [loc]
+
+-- subgridsForLoc::Location -> [[Location]]
+-- subgridsForLoc loc = filter (elem loc) allsubgridlocs
+
+-- locsInRow::Int -> [Location]
+-- locsInRow row = rowlocs !! (row-1)
+
+-- locsInCol::Int -> [Location]
+-- locsInCol col = collocs !! (col-1)
 
 
 -- fill Grid
@@ -169,11 +191,6 @@ searchDFS children goal (x:xs)
   | goal x    = x : searchDFS children goal xs
   | otherwise = searchDFS children goal ((children x) ++ xs)
   
-hasNakedSingles::[Constraint] -> Bool
-hasNakedSingles constraints = any (==1) $ map (length . snd) constraints
-cleanNakedSingles::[Constraint] -> [Constraint]
-cleanNakedSingles constraints = constraints
-
 --type Constraint = (Location,[Value])
 
 searchBFS::(SnapShot -> [SnapShot]) -> (SnapShot -> Bool) -> [SnapShot] -> [SnapShot]

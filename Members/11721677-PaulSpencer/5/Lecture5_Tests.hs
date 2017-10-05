@@ -2,6 +2,7 @@ module Lecture5_Tests where
 import Lecture5
 import Test.QuickCheck
 import Data.List
+import Control.Monad
 
 rowGen::Gen Row
 rowGen = choose(1,9)
@@ -56,6 +57,7 @@ snapShotGen::Gen SnapShot
 snapShotGen = (,) <$> vAtLocGen <*> consGen
 
 
+-- TestNakedSingle
 -- precondition = has unique naked single, and same number elsewhere
 
 -- postcondition = removed all but unique naked single
