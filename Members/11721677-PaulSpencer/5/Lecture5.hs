@@ -3,6 +3,7 @@ import Data.List
 import Data.Maybe
 import System.Random
 import Debug.Trace
+import Control.Applicative
 
 type Row         = Int 
 type Column      = Int 
@@ -20,26 +21,26 @@ main::IO ()
 main = do 
   [randomfilledGrid] <- randomSolveSnapshot [emptySnapShot]
   showSnapShot randomfilledGrid
-  problemSnapShot  <- genProblem randomfilledGrid
+  problemSnapShot  <- trace ("***************************************\n") (genProblem randomfilledGrid)
   showSnapShot problemSnapShot
 
 -- create empty Grid
 emptySnapShot::SnapShot
 emptySnapShot = (\_ -> 0, getconstraints (\_ -> 0))
---emptySnapShot = (\_ -> 0, getconstraints (\_ -> 0))
 
 getconstraints::ValueAtLocation -> [Constraint] 
-getconstraints valFinder = sortByConstraintVals $ cleanconstraints allConstraints  
+getconstraints valFinder =  (sortByConstraintVals allConstraints) 
     where 
       allConstraints = [makeConstraint loc | loc <- openPositions]
       openPositions = [loc | loc <- alllocs, valFinder loc == 0]
       makeConstraint loc = (loc, getConstraintValues valFinder loc)
 
+
 sortByConstraintVals::[Constraint] -> [Constraint] 
-sortByConstraintVals = sortBy (\(_,c1) (_,c2) -> compare (length c1) (length $ c2))
+sortByConstraintVals =  (sortBy (\(_,c1) (_,c2) -> compare (length c1) (length $ c2)))
 
 getConstraintValues::ValueAtLocation -> Location -> [Value]
-getConstraintValues valFinder loc@(r,c) = wipeOutExisting
+getConstraintValues valFinder loc@(r,c) = (wipeOutExisting)
     where 
         wipeOutExisting = notInRow `intersect` notInColumn `intersect` notInSubgrid 
         notInRow = stillToFind [valFinder loc | loc <- locsInRow r ]
@@ -48,58 +49,18 @@ getConstraintValues valFinder loc@(r,c) = wipeOutExisting
         stillToFind currentGroup = validvalues \\ currentGroup 
         validvalues = [1..9]
 
--- constraint cleaners
-
-cleanconstraints::[Constraint] -> [Constraint]
-cleanconstraints cs = cs
-
--- cleanNakedSingle::[Constraint] -> [Constraint]
--- cleanNakedSingle constraints@(loc, vs) = (loc, values \\ (otherNakedSingles constraints loc))
-
-cleanNakedSingles::[Constraint] -> [Constraint]
-cleanNakedSingles constraints = map (cleanNakedSingle constraints) constraints
-
-cleanNakedSingle::[Constraint] -> Constraint -> Constraint
-cleanNakedSingle constraints (loc, vs) = (loc, (vs \\ (otherNakedSingles constraints loc)))
-
-otherNakedSingles :: [Constraint] -> Location -> [Value]
-otherNakedSingles constraints loc = fndNkdSngl $ (getAllConstraintsForLoc constraints loc)
-
-fndNkdSngl::[Constraint] -> [Value]
-fndNkdSngl constraints = concat $ filter (\x -> length x == 1) $ map snd constraints 
-
---fndNkdDbl constraints =  $ filter (\x -> length x == 2) $ map snd constraints
-
-getAllConstraintsForLoc::[Constraint] -> Location -> [Constraint]
-getAllConstraintsForLoc constraints loc =  filter (consFilter (getAllLocsForLoc loc)) constraints
-
-consFilter::[Location] -> Constraint -> Bool
-consFilter locs (loc,_) = loc `elem` locs
-
-getAllLocsForLoc::Location -> [Location]
-getAllLocsForLoc loc@(r,c) = (nub $ locsInRow r ++ locsInCol c ++ (concat $ subgridsForLoc loc)) \\ [loc]
-
--- subgridsForLoc::Location -> [[Location]]
--- subgridsForLoc loc = filter (elem loc) allsubgridlocs
-
--- locsInRow::Int -> [Location]
--- locsInRow row = rowlocs !! (row-1)
-
--- locsInCol::Int -> [Location]
--- locsInCol col = collocs !! (col-1)
-
 
 -- fill Grid
 randomSolveSnapshot::[SnapShot] -> IO [SnapShot]
-randomSolveSnapshot snapShot = snapShotSearch randomNextSnapShot noPossibilities (return snapShot)
+randomSolveSnapshot snapShot = (snapShotSearch randomNextSnapShot noPossibilities (return snapShot))
   where
     noPossibilities = (\(_,vs) -> null vs)
-    randomNextSnapShot (valueFinder,cs) = do 
+    randomNextSnapShot (valFinder,cs) = do 
       xs <- getRandomConstraints cs
-      if null xs then return [] else return (branchSnapShot (valueFinder,cs\\xs) (head xs))
+      if null xs then return [] else  (return (branchSnapShot (valFinder,cs\\xs) (head xs)))
 
 getRandomConstraints::[Constraint] -> IO [Constraint]
-getRandomConstraints cs = getRandomItem (getsamesizedconstraints cs) 
+getRandomConstraints cs =  (getRandomItem (getsamesizedconstraints cs)) 
   where 
     getsamesizedconstraints [] = []
     getsamesizedconstraints constraints@(x:_) = takeWhile (sameNrRemaining x) constraints
@@ -112,10 +73,10 @@ getRandomItem xs = do
   return [xs !! index]
 
 snapShotSearch::(SnapShot -> IO [SnapShot]) -> (SnapShot -> Bool) -> IO [SnapShot] -> IO [SnapShot]
-snapShotSearch nextSnapShot predicate snapShotsIO = do 
+snapShotSearch nextSnapShot predicate snapShotsIO = (do 
   snapShots <- snapShotsIO 
   nextSnapShots <- nextSnapShotsIO snapShots
-  handleSnapShot snapShots nextSnapShots
+  handleSnapShot snapShots nextSnapShots)
     where
       nothing = return []
       nextSnapShotsIO ss = if null ss then nothing else snapShotSearch nextSnapShot predicate (nextSnapShot $ head ss)
@@ -126,11 +87,14 @@ snapShotSearch nextSnapShot predicate snapShotsIO = do
         | null (tail ss)      = nothing
         | otherwise           = snapShotSearch nextSnapShot predicate (return $ tail ss)
 
+
 branchSnapShot::SnapShot -> Constraint -> [SnapShot]
-branchSnapShot (valFinder, constraints) (loc,vs) = [(getvalfinder v, sortedConstraints v) | v <- vs]
+branchSnapShot (valFinder, constraints) (loc,vs) = ([(getvalfinder v, sortedConstraints v) | v <- vs])
   where 
-    getvalfinder val newloc = if newloc == loc then val else valFinder newloc
+    getvalfinder val newloc = (if newloc == loc then val else valFinder newloc)
     sortedConstraints val = sortByConstraintVals $ reducePossibilities (loc, val) constraints
+--    sortedConstraints val = sortByConstraintVals $ cleanconstraints $ reducePossibilities (loc, val) constraints
+
 
 reducePossibilities::SolvedCell -> [Constraint] -> [Constraint]
 reducePossibilities _ [] = []
@@ -151,9 +115,9 @@ showSnapShot (valFinder, _) = showGrid $ map (map valFinder) collocs
 
 -- remove items from Grid
 genProblem::SnapShot -> IO SnapShot
-genProblem snapShot@(valFinder,_) = do 
+genProblem snapShot@(valFinder,_) = (do 
   ys <- randomizeLocations solvedLocations
-  return (minimalize snapShot ys)
+  return (minimalize snapShot ys))
   where 
     solvedLocations = [loc | loc <- alllocs, valFinder loc /= 0]
 
@@ -166,6 +130,29 @@ randomizeLocations locs = do
     rlocs <- randomizeLocations (locs\\rloc)
     return (head rloc:rlocs)
 
+
+
+    -- uniqueSol :: Node -> Bool
+    -- uniqueSol node = singleton (solveNs [node]) where 
+    --   singleton [] = False
+    --   singleton [x] = True
+    --   singleton (x:y:zs) = False
+    
+    -- eraseS :: Sudoku -> (Row,Column) -> Sudoku
+    -- eraseS s (r,c) (x,y) | (r,c) == (x,y) = 0
+    --                      | otherwise      = s (x,y)
+    
+    -- eraseN :: Node -> (Row,Column) -> Node
+    -- eraseN n (r,c) = (s, constraints s) 
+    --   where s = eraseS (fst n) (r,c) 
+    
+    -- minimalize :: Node -> [(Row,Column)] -> Node
+    -- minimalize n [] = n
+    -- minimalize n ((r,c):rcs) | uniqueSol n' = minimalize n' rcs
+    --                          | otherwise    = minimalize n  rcs
+    --   where n' = eraseN n (r,c)
+        
+
 minimalize::SnapShot -> [Location] -> SnapShot
 minimalize snapShot [] = snapShot
 minimalize snapShot@(valFinder,_) (loc:locs) 
@@ -175,15 +162,24 @@ minimalize snapShot@(valFinder,_) (loc:locs)
       snapShot' = (newValFinder, getconstraints newValFinder) 
       newValFinder = (\newloc -> if loc == newloc then 0 else valFinder newloc)
 
-uniqueSolution::SnapShot -> Bool
-uniqueSolution snapShot = length (solveSnapShots [snapShot]) == 1
+-- uniqueSolution::SnapShot -> Bool
+-- uniqueSolution snapShot = trace ("^v^v^v^v^")  (length (solveSnapShots [snapShot]) == 1)
+
+uniqueSolution :: SnapShot -> Bool
+uniqueSolution node = singleton (solveSnapShots [node]) where 
+  singleton [] = False
+  singleton [x] = True
+  singleton (x:y:zs) = False
 
 solveSnapShots::[SnapShot] -> [SnapShot]
-solveSnapShots sss = searchDFS nextLevelSnapShots noVals sss
+--solveSnapShots sss = trace ("^^^^^^^^^^^^^^^") (searchDFS nextLevelSnapShots noVals sss)
+solveSnapShots sss =  (searchDFS nextLevelSnapShots noVals sss)
     where 
       nextLevelSnapShots (_,[]) = []
-      nextLevelSnapShots (valFinder,p:ps) = branchSnapShot (valFinder,ps) p 
+--      nextLevelSnapShots (valFinder,p:ps) = trace("vv") (branchSnapShot (valFinder,ps) p) 
+      nextLevelSnapShots (valFinder,p:ps) =  (branchSnapShot (valFinder,ps) p) 
       noVals = (\(_,vs) -> null vs)
+
 
 searchDFS::(SnapShot -> [SnapShot]) -> (SnapShot -> Bool) -> [SnapShot] -> [SnapShot]
 searchDFS children goal [] = []
@@ -215,7 +211,7 @@ rowlocs = [[(r,c) | c <- positions] | r <- positions]
 collocs = [[(r,c) | r <- positions] | c <- positions]
 subgridlocs = [[(r, c) | r <- rs, c <- cs] | rs <- stdblocks, cs <- stdblocks ]
 nrcgridlocs = [[(r, c) | r <- rs, c <- cs] | rs <- nrcblocks, cs <- nrcblocks ]
-allsubgridlocs = subgridlocs ++ nrcgridlocs
+allsubgridlocs = subgridlocs -- ++ nrcgridlocs
 
 subgridsForLoc::Location -> [[Location]]
 subgridsForLoc loc = filter (elem loc) allsubgridlocs

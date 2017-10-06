@@ -57,7 +57,15 @@ snapShotGen::Gen SnapShot
 snapShotGen = (,) <$> vAtLocGen <*> consGen
 
 
+
+
+---
+
+
 -- TestNakedSingle
 -- precondition = has unique naked single, and same number elsewhere
-
+prop_nakedSingle::[Constraint] -> Bool
+prop_nakedSingle board = do
+    where 
+        
 -- postcondition = removed all but unique naked single
