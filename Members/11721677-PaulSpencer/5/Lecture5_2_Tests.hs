@@ -7,6 +7,8 @@ import Control.Monad
 
 import System.IO.Unsafe
 
+
+
 -- generators
 rowGen::Gen Row
 rowGen = choose(1,9)
@@ -76,4 +78,28 @@ showTestGrid [as,bs,cs,ds,es,fs,gs,hs,is] =
         showC aa1 aa2 aa3 = ("| " ++ (showVal aa1) ++ " " ++ (showVal aa2) ++ " " ++ (showVal aa3) ++ " ")
         hline = "+-------+-------+-------+\n"
 
-tmp grid = trace (showTestGrid grid) ("done") 
+---
+
+-- tests
+-- srg::Gen (Sudoku, Row)
+-- srg = ((,) <$> sudokuGen <*> rowGen)
+-- p::(Sudoku, Row) -> Bool
+-- p =  (\(sud, r) -> length (freeInRow sud r) > 9)
+newtype MySudoku = 
+-- prop_freeInRow::Row -> Property
+prop_freeInRow sud = forAll rowGen $ (\r -> length (freeInRow sud r) > 9)
+-- prop_freeInRow g = forAll srg 
+--test_freeInRow = quickCheck prop_freeInRow
+
+
+-- test_freeInRow1 = quickCheck prop_freeInRow
+-- prop_correctNumberOfDerangements::Integer -> Bool
+-- prop_correctNumberOfDerangements n = (derangementSize n) == (iLength $ deran n)
+-- prop_correctNr_limited = forAll performanceLimit 
+
+
+-- freeInRow :: Sudoku -> Row -> [Value]
+-- freeInRow s r = 
+--   freeInSeq [ s (r,i) | i <- positions  ]
+-- freeInSeq :: [Value] -> [Value]
+-- freeInSeq seq = values \\ seq 

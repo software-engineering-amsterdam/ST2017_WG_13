@@ -104,11 +104,12 @@ reducePossibilities solvedCell@(oloc,v) (constraint@(cloc,vs):constraints)
       where
         trimPossibilities = (cloc,vs\\[v])
         nextReduction = reducePossibilities solvedCell constraints
-        shouldReduce ol@(r, c) cl@(r',c') = inSameRow || inSameCol || inSameSubgrid
+        shouldReduce ol@(r, c) cl@(r',c') = inSameRow || inSameCol || inSameSubgrid || inSameNrcSubGrid
           where
             inSameRow = r == r'
             inSameCol = c == c' 
-            inSameSubgrid = or [sg1 == sg2 | sg1 <- subgridsForLoc ol, sg2 <- subgridsForLoc cl]
+            inSameSubgrid = or [sg1 == sg2 | sg1 <- subgridsForLoc' ol, sg2 <- subgridsForLoc' cl]
+            inSameNrcSubGrid = or [sg1 == sg2 | sg1 <- nrcsubgridsForLoc ol, sg2 <- nrcsubgridsForLoc cl]
 
 showSnapShot::SnapShot -> IO()
 showSnapShot (valFinder, _) = showGrid $ map (map valFinder) collocs  
@@ -211,16 +212,6 @@ rowlocs = [[(r,c) | c <- positions] | r <- positions]
 collocs = [[(r,c) | r <- positions] | c <- positions]
 subgridlocs = [[(r, c) | r <- rs, c <- cs] | rs <- stdblocks, cs <- stdblocks ]
 nrcgridlocs = [[(r, c) | r <- rs, c <- cs] | rs <- nrcblocks, cs <- nrcblocks ]
-allsubgridlocs = subgridlocs -- ++ nrcgridlocs
-
-subgridsForLoc::Location -> [[Location]]
-subgridsForLoc loc = filter (elem loc) allsubgridlocs
-
-locsInRow::Int -> [Location]
-locsInRow row = rowlocs !! (row-1)
-
-locsInCol::Int -> [Location]
-locsInCol col = collocs !! (col-1)
 
 --- Display Grid
 showVal::Value -> String
