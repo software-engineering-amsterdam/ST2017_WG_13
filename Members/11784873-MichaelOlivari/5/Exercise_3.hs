@@ -6,6 +6,8 @@ import Data.List
 import System.Random
 import Lecture5
 
+-- Time Spent: ~2hrs
+
 {- 
 -- Too weak, need to check when any of the filled positions are removed not just the first
 
