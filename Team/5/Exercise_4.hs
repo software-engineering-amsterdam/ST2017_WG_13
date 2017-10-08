@@ -1,5 +1,10 @@
 module Exercise_4 where 
 
+{-
+ notes are found at:
+ https://github.com/software-engineering-amsterdam/ST2017_WG_13/blob/master/Team/5/Exercise_4.md
+-}
+
 import Data.List
 import System.Random
 import Control.Monad
@@ -62,35 +67,7 @@ block4Gen = liftM (map ((!!)sgs')) $ sgcntGen
       r <- getStdRandom (randomR (0,4))
       return (configs !! r )
 
---      
--- +-------+-------+-------+
--- | 4 1 3 | 6 5 7 | 2 9 8 |
--- | 2 8 9 | 4 3 1 | 5 7 6 |
--- | 5 6 7 | 9 8 2 | 3 4 1 |
--- +-------+-------+-------+
--- | 8 2 5 | 3 6 9 | 7 1 4 |
--- | 3 7 4 | 1 2 8 | 6 5 9 |
--- | 6 9 1 | 5 7 4 | 8 2 3 |
--- +-------+-------+-------+
--- | 9 5 6 | 7 4 3 | 1 8 2 |
--- | 1 3 8 | 2 9 5 | 4 6 7 |
--- | 7 4 2 | 8 1 6 | 9 3 5 |
--- +-------+-------+-------+
--- +-------+-------+-------+
--- | 4     |       | 2     |
--- | 2 8 9 |       |       |
--- |   6   |       | 3 4 1 |
--- +-------+-------+-------+
--- |       | 3 6   |       |
--- |       |   2 8 |       |
--- |       | 5 7 4 |       |
--- +-------+-------+-------+
--- |   5   |       |   8   |
--- | 1 3 8 |       | 4   7 |
--- | 7 4   |       |   3 5 |
--- +-------+-------+-------+
------------
-
+----- original code.
 
 rowConstrnt, columnConstrnt, blockConstrnt :: Constrnt
 rowConstrnt = [[(r,c)| c <- values ] | r <- values ]
