@@ -77,7 +77,8 @@ block4Gen = liftM (map ((!!)sgs')) $ sgcntGen
 ````
 
 ## best performance: we mangaged to get a 4 blanker:
-     
+
+```     
 +-------+-------+-------+
 | 4 1 3 | 6 5 7 | 2 9 8 |
 | 2 8 9 | 4 3 1 | 5 7 6 |
@@ -104,3 +105,5 @@ block4Gen = liftM (map ((!!)sgs')) $ sgcntGen
 | 1 3 8 |       | 4   7 |
 | 7 4   |       |   3 5 |
 +-------+-------+-------+
+
+```

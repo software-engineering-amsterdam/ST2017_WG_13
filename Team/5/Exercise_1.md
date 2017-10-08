@@ -8,6 +8,7 @@ mostly rewriting code so I could try and understand it and then throwing that co
 ## Solution to the puzzel
 It was required to solve this problem:
 
+```
 +---------+---------+---------+
 |         | 3       |         |
 |   +-----|--+   +--|-----+   |
@@ -25,9 +26,10 @@ It was required to solve this problem:
 |   +-----|--+   +--|-----+   |
 |       2 |         |         |
 +---------+---------+---------+
-
+```
 the solution is:
 
+```
 +----------+-----------+----------+
 | 4   7  8 | 3   9   2 | 6  1   5 |
 |   +------|---+   +---|------+   |
@@ -47,6 +49,7 @@ the solution is:
 |   +------|---+   +---|------+   |
 | 1   4  2 | 5   6   3 | 8  9   7 |
 +----------+-----------+----------+
+```
 
 ## Timing
 
