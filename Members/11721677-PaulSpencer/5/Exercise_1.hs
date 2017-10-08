@@ -1,4 +1,4 @@
-module Lecture5_2 where 
+module Exercise_1 where 
 import Data.List
 
 type Row    = Int 
@@ -227,3 +227,10 @@ exampleNrc = [[0,0,0,3,0,0,0,0,0],
               [0,0,2,0,0,0,0,0,0]]
 
 solveNrc = solveAndShow exampleNrc
+nrc1000 = redoAction 1000 solveNrc
+
+--redoAction :: Int -> IO () -> IO ()
+redoAction n action
+    | n <= 0    = return () 
+    | otherwise = do action  
+                     redoAction (n-1) action

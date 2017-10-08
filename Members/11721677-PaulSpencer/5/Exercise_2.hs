@@ -17,19 +17,56 @@ values    = [1..9]
 type Position = (Row,Column)
 type Constrnt = [[Position]]
 
-rowConstraint = [[(r,c)| c <- values ] | r <- values ]
-columnConstraint = [[(r,c)| r <- values ] | c <- values ]
+rowconstrnt = [[(r,c)| c <- values ] | r <- values ]
+colcnstraint = [[(r,c)| r <- values ] | c <- values ]
 
 blocks :: [[Int]]
 blocks = [[1..3],[4..6],[7..9]]
 
-blockConstraint = [[(r,c)| r <- b1, c <- b2 ] | b1 <- blocks, b2 <- blocks ]
+blockconstrnt = [[(r,c)| r <- b1, c <- b2 ] | b1 <- blocks, b2 <- blocks ]
 
 freeAtPos' :: Sudoku -> Position -> Constrnt -> [Value]
 freeAtPos' s (r,c) xs = let
     ys = filter (elem (r,c)) xs
     in
     foldl1 intersect (map ((values \\) . map s) ys)
+
+-- add Nrc 
+
+nrcconstrnt :: Constrnt
+nrcconstrnt = [[(r,c)| r <- b1, c <- b2 ] | b1 <- nrcblocks, b2 <- nrcblocks ]
+
+constrnts :: Constrnt
+constrnts = rowconstrnt ++ colcnstraint ++ blockconstrnt ++ nrcconstrnt
+
+nrcblocks :: [[Int]]
+nrcblocks = [[2..4],[6..8]]
+nrcgridlocs = [[(r, c) | r <- rs, c <- cs] | rs <- nrcblocks, cs <- nrcblocks ]
+nrcgrid s loc = [s loc' | loc' <- concat $ filter (elem loc) nrcgridlocs]
+nrclocs4loc loc = concat $ filter (elem loc) nrcgridlocs
+nrcGrid s loc = [s loc' | loc' <- nrclocs4loc loc]
+
+exampleNrc :: Grid
+exampleNrc = [[0,0,0,3,0,0,0,0,0],
+              [0,0,0,7,0,0,3,0,0],
+              [2,0,0,0,0,0,0,0,8],
+              [0,0,6,0,0,5,0,0,0],
+              [0,9,1,6,0,0,0,0,0],
+              [3,0,0,0,7,1,2,0,0],
+              [0,0,0,0,0,0,0,3,1],
+              [0,8,0,0,4,0,0,0,0],
+              [0,0,2,0,0,0,0,0,0]]
+
+solveNrc = solveAndShow exampleNrc
+
+redoAction n action
+    | n <= 0    = return () 
+    | otherwise = do 
+        action  
+        redoAction (n-1) action
+
+nrc1000 = redoAction 1000 solveNrc
+-- to run 1000 = (4.23 secs, 438,842,472 bytes) (though first run was slower)
 
 --- Display Grid
 showVal::Value -> String
@@ -112,7 +149,7 @@ injective xs = nub xs == xs
 rowInjective,colInjective,subgridInjective :: Sudoku -> Position -> Bool
 rowInjective s (r,_) = injective $ gone $ [s pos | pos <- rowlocs !! (r-1)]
 colInjective s (_,c) = injective $ gone $ [s pos | pos <- collocs !! (c-1)]
-subgridInjective s pos = injective $ gone $ (subGrid s blockConstraint pos)
+subgridInjective s pos = injective $ gone $ (subGrid s blockconstrnt pos)
 
 gone::[Value] -> [Value]
 gone vals = filter (/= 0) vals 
@@ -139,10 +176,7 @@ solved  :: Node -> Bool
 solved (_,c) = null c
 
 extendNode :: Node -> Position -> [Node]
-extendNode (s, cs) pos = [(extend s (pos,v), cs) | v <- freeAtPos' s pos cnstrnts]
-    where
-    cnstrnts = rowConstraint ++ columnConstraint ++ blockConstraint;
-
+extendNode (s, cs) pos = [(extend s (pos,v), cs) | v <- freeAtPos' s pos constrnts]
 
 initNode :: Grid -> [Node]
 initNode gr = let s = grid2sud gr in 
@@ -158,9 +192,7 @@ valLen (_,vs) (_,vs') = compare (length vs) (length vs')
 constraints :: Sudoku -> [Position]
 constraints s = [pos | (pos, _) <- (sortBy valLen freePositions)]
     where
-    freePositions = [(pos, freeAtPos' s pos cnstrnts) | pos <- openPositions s ]
-    cnstrnts = rowConstraint ++ columnConstraint ++ blockConstraint;
-
+    freePositions = [(pos, freeAtPos' s pos constrnts) | pos <- openPositions s ]
 
 search :: (Node -> [Node]) -> (Node -> Bool) -> [Node] -> [Node]
 search getChild goal [] = []
