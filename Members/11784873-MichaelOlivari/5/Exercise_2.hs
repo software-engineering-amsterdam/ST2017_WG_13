@@ -7,18 +7,11 @@ import System.Random
 
 -- Time take = ~1 hr (easier after doing assignment 1)
 
-type Row    = Int 
-type Column = Int 
-type Value  = Int
-type Grid   = [[Value]]
-
+------------------------------------- Refactorings -----------------------------------------
 type Position = (Row,Column)
 type Constrnt = [[Position]]
 
-positions, values :: [Int]
-positions = [1..9]
-values    = [1..9] 
-
+{- New Constraint implementations -}
 rowConstrnt, columnConstrnt, blockConstrnt :: Constrnt
 rowConstrnt = [[(r,c)| c <- values ] | r <- values ]
 columnConstrnt = [[(r,c)| r <- values ] | c <- values ]
@@ -29,13 +22,76 @@ nrcConstrnt = [[(r,c)| r <- b1, c <- b2 ] | b1 <- nrcBlocks, b2 <- nrcBlocks ]
 
 combinedConstrnts :: Constrnt
 combinedConstrnts = rowConstrnt ++ columnConstrnt ++ blockConstrnt ++ nrcConstrnt
+{------------------------------------}
 
-
-blocks :: [[Int]]
-blocks = [[1..3],[4..6],[7..9]]
+{--------- Revised freeAtPos function from lab --------}
+freeAtPos :: Sudoku -> Position -> Constrnt -> [Value]
+freeAtPos s (r,c) xs = let 
+    ys = filter (elem (r,c)) xs 
+  in 
+    foldl1 intersect (map ((values \\) . map s) ys)
+{-----------------------------------------------------}
 
 nrcBlocks :: [[Int]]                {-- Added --}
 nrcBlocks = [[2..4],[6..8]]         {-- Added --}
+
+nrcBl :: Int -> [Int]                           {-- Added --}
+nrcBl x = concat $ filter (elem x) nrcBlocks    {-- Added --}
+
+nrcSubGrid :: Sudoku -> (Row,Column) -> [Value]                     {-- Added --}
+nrcSubGrid s (r,c) = [s (r',c') | r' <- nrcBl r, c' <- nrcBl c]     {-- Added --}
+
+sameblock :: (Row,Column) -> (Row,Column) -> Bool
+sameblock (r,c) (x,y) = (bl r == bl x && bl c == bl y) || ( nrcBl r == nrcBl x && nrcBl c == nrcBl y) {- revised -}
+
+constraints :: Sudoku -> [Constraint] 
+constraints s = sortBy length3rd 
+    [(r,c, freeAtPos s (r,c) combinedConstrnts) |               {- updated for new freeAtPos function -}
+                       (r,c) <- openPositions s ]
+
+{- Imported the example NRC puzzle from the lab -}
+exampleNRC :: Grid
+exampleNRC = [[0,0,0,3,0,0,0,0,0],
+              [0,0,0,7,0,0,3,0,0],
+              [2,0,0,0,0,0,0,0,8],
+              [0,0,6,0,0,5,0,0,0],
+              [0,9,1,6,0,0,0,0,0],
+              [3,0,0,0,7,1,2,0,0],
+              [0,0,0,0,0,0,0,3,1],
+              [0,8,0,0,4,0,0,0,0],
+              [0,0,2,0,0,0,0,0,0]]
+
+solveNRC = solveAndShow exampleNRC          {-- Runs the NRC example --}
+
+
+{-
+This implementation was easier to refactor as any additional constraints
+can simply be lumped and mapped into the combinedConstraints, reducing a lot of
+revisions having to be made on those functions dealing with the contraints (Such
+as the given revision of FreeAtPos). 
+
+Performance is mostly the same. Stats gotten by using GHCI +s on the first run of
+each solveNRC call for both exercise 1 and exercise 2.
+
+Exercise_1> solveNRC 
+(0.23 secs, 13,040,176 bytes)
+
+Exercise_2> solveNRC
+(0.22 secs, 12,610,944 bytes)
+-}
+
+----------------------------------------- Begin Original Program ------------------------------------------
+type Row    = Int 
+type Column = Int 
+type Value  = Int
+type Grid   = [[Value]]
+
+positions, values :: [Int]
+positions = [1..9]
+values    = [1..9] 
+
+blocks :: [[Int]]
+blocks = [[1..3],[4..6],[7..9]]
 
 showVal :: Value -> String
 showVal 0 = " "
@@ -85,15 +141,9 @@ showSudoku = showGrid . sud2grid
 bl :: Int -> [Int]
 bl x = concat $ filter (elem x) blocks
 
-nrcBl :: Int -> [Int]                           {-- Added --}
-nrcBl x = concat $ filter (elem x) nrcBlocks    {-- Added --}
-
 subGrid :: Sudoku -> (Row,Column) -> [Value]
 subGrid s (r,c) = 
   [ s (r',c') | r' <- bl r, c' <- bl c ]
-
-nrcSubGrid :: Sudoku -> (Row,Column) -> [Value]                     {-- Added --}
-nrcSubGrid s (r,c) = [s (r',c') | r' <- nrcBl r, c' <- nrcBl c]     {-- Added --}
 
 freeInSeq :: [Value] -> [Value]
 freeInSeq seq = values \\ seq 
@@ -117,14 +167,6 @@ freeAtPos s (r,c) =
    `intersect` (freeInSubgrid s (r,c)) 
    `intersect` (freeInNRC s (r,c))                     
 -}
-
-{--------- Revised freeAtPos function from lab --------}
-freeAtPos :: Sudoku -> Position -> Constrnt -> [Value]
-freeAtPos s (r,c) xs = let 
-    ys = filter (elem (r,c)) xs 
-  in 
-    foldl1 intersect (map ((values \\) . map s) ys)
-{-----------------------------------------------------}
 
 
 injective :: Eq a => [a] -> Bool
@@ -183,8 +225,6 @@ prune (r,c,v) ((x,y,zs):rest)
         (x,y,zs\\[v]) : prune (r,c,v) rest
   | otherwise = (x,y,zs) : prune (r,c,v) rest
 
-sameblock :: (Row,Column) -> (Row,Column) -> Bool
-sameblock (r,c) (x,y) = (bl r == bl x && bl c == bl y) || ( nrcBl r == nrcBl x && nrcBl c == nrcBl y) {- revised -}
 
 initNode :: Grid -> [Node]
 initNode gr = let s = grid2sud gr in 
@@ -199,10 +239,6 @@ openPositions s = [ (r,c) | r <- positions,
 length3rd :: (a,b,[c]) -> (a,b,[c]) -> Ordering
 length3rd (_,_,zs) (_,_,zs') = compare (length zs) (length zs')
 
-constraints :: Sudoku -> [Constraint] 
-constraints s = sortBy length3rd 
-    [(r,c, freeAtPos s (r,c) combinedConstrnts) |               {- updated for new freeAtPos function -}
-                       (r,c) <- openPositions s ]
 
 data Tree a = T a [Tree a] deriving (Eq,Ord,Show)
 
@@ -294,18 +330,6 @@ example5 = [[1,0,0,0,0,0,0,0,0],
             [0,0,0,0,0,0,7,0,0],
             [0,0,0,0,0,0,0,8,0],
             [0,0,0,0,0,0,0,0,9]]
-
-{- Imported the example NRC puzzle from the lab -}
-exampleNRC :: Grid
-exampleNRC = [[0,0,0,3,0,0,0,0,0],
-              [0,0,0,7,0,0,3,0,0],
-              [2,0,0,0,0,0,0,0,8],
-              [0,0,6,0,0,5,0,0,0],
-              [0,9,1,6,0,0,0,0,0],
-              [3,0,0,0,7,1,2,0,0],
-              [0,0,0,0,0,0,0,3,1],
-              [0,8,0,0,4,0,0,0,0],
-              [0,0,2,0,0,0,0,0,0]]
 
 emptyN :: Node
 emptyN = (\ _ -> 0,constraints (\ _ -> 0))
@@ -401,5 +425,3 @@ main = do [r] <- rsolveNs [emptyN]
           showNode r
           s  <- genProblem r
           showNode s
-
-solveNRC = solveAndShow exampleNRC          {-- Runs the NRC example --}
