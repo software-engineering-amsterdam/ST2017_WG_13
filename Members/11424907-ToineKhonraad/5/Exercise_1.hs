@@ -86,7 +86,7 @@ sud2grid :: Sudoku -> Grid
 sud2grid s = map (map s) rowlocs 
 
 grid2sud :: Grid -> Sudoku
-grid2sud gr = pos gr
+grid2sud  = pos 
   where 
   pos :: Grid -> Location -> Value 
   pos gr (r,c) = (gr !! (r-1)) !! (c-1)
