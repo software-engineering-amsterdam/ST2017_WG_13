@@ -44,7 +44,7 @@ showGrid vs = showGrid' vs drawingPositions
   where 
     showGrid' _ [] = putStrLn "" 
     showGrid' vs (loc@(r,c) : ps)
-      | c == (last cs)     = colEnd
+      | c == last cs       = colEnd
       | loc `elem` vlocs   = value'
       | loc `elem` corners = corner
       | loc `elem` vlines  = vline
@@ -52,7 +52,7 @@ showGrid vs = showGrid' vs drawingPositions
       | otherwise          = empty
         where
           value' = next valueAtLocation
-          valueAtLocation = maybe ' ' head  $ lookup loc $ zip vlocs (map (showVal) (concat vs)) 
+          valueAtLocation = maybe ' ' head  $ lookup loc $ zip vlocs (map showVal (concat vs)) 
           colEnd = next '\n'
           corner = next '+'
           vline = next '|'
@@ -86,7 +86,7 @@ sud2grid :: Sudoku -> Grid
 sud2grid s = map (map s) rowlocs 
 
 grid2sud :: Grid -> Sudoku
-grid2sud gr = \loc -> pos gr loc 
+grid2sud gr = pos gr
   where 
   pos :: Grid -> Location -> Value 
   pos gr (r,c) = (gr !! (r-1)) !! (c-1)
@@ -122,10 +122,10 @@ freeInNrcgrid s (r,c) = freeInSeq (nrcGrid s (r,c))
 
 freeAtPos :: Sudoku -> Location -> [Value]
 freeAtPos s loc@(r,c) = 
-  (freeInRow s r) 
-   `intersect` (freeInColumn s c) 
-   `intersect` (freeInSubgrid s loc) 
-   `intersect` (freeInNrcgrid s loc) 
+  freeInRow s r 
+   `intersect` freeInColumn s c 
+   `intersect` freeInSubgrid s loc 
+   `intersect` freeInNrcgrid s loc 
 
 injective :: Eq a => [a] -> Bool
 injective xs = nub xs == xs
@@ -133,11 +133,11 @@ injective xs = nub xs == xs
 rowInjective,colInjective,subgridInjective, nrcgridInjective :: Sudoku -> Location -> Bool
 rowInjective s (r,_) = injective $ gone $ rowValues s r
 colInjective s (_,c) = injective $ gone $ columnValues s c
-subgridInjective s loc = injective $ gone $ (subGrid s loc)
-nrcgridInjective s loc = injective $ gone $ (nrcGrid s loc)
+subgridInjective s loc = injective $ gone $ subGrid s loc
+nrcgridInjective s loc = injective $ gone $ nrcGrid s loc
 
 gone::[Value] -> [Value]
-gone vals = filter (/= 0) vals 
+gone = filter (/= 0)
 
 consistent :: Sudoku -> Bool
 consistent s = and $ consistentRow ++ consistentCol ++ consistentSub ++ consistentNrc
@@ -181,7 +181,7 @@ prune (lx@(r,c),v) ((ly@(x,y),vs):rest)
   | connected = trim : next
   | otherwise = (ly,vs) : next
   where
-    connected = (r == x) || (c == y) || (sameblock lx ly) || (sameNrcblock lx ly)
+    connected = (r == x) || (c == y) || sameblock lx ly || sameNrcblock lx ly
     trim = (ly,vs\\[v])
     next = prune (lx,v) rest
 
@@ -200,7 +200,7 @@ search :: (Node -> [Node]) -> (Node -> Bool) -> [Node] -> [Node]
 search getChild goal [] = []
 search getChild goal (x:xs) 
   | goal x    = x : search getChild goal xs
-  | otherwise = search getChild goal ((getChild x) ++ xs)
+  | otherwise = search getChild goal (getChild x ++ xs)
 
 solveNs :: [Node] -> [Node]
 solveNs = search childNode solved 
@@ -213,7 +213,7 @@ solveAndShow :: Grid -> IO[()]
 solveAndShow gr = solveShowNs (initNode gr)
 
 solveShowNs :: [Node] -> IO[()]
-solveShowNs ns = sequence $ fmap showNode (solveNs ns)
+solveShowNs ns = traverse showNode (solveNs ns)
 
 exampleNrc :: Grid 
 exampleNrc = [[0,0,0,3,0,0,0,0,0],
