@@ -1,6 +1,11 @@
 module Exercise_1 where 
 import Data.List
 
+{- 
+  for notes see:
+  https://github.com/software-engineering-amsterdam/ST2017_WG_13/blob/master/Team/5/Exercise_1.md
+-}
+
 type Row    = Int 
 type Column = Int 
 type Value  = Int
@@ -23,7 +28,7 @@ nrcGridVLines = [[4,15],[19,30]]
 
 corners,stdcorners,nrccorners::[DrawLoc]
 corners = stdcorners ++ nrccorners
-stdcorners = [(r,c) | r <- mainGridHLines, c <- mainGridVLines]
+stdcorners = [(r,c) | r <- ma inGridHLines, c <- mainGridVLines]
 nrccorners = [(r,c) | r <- concat nrcGridHLines, c <- concat nrcGridVLines]
 
 vlines,stdvlines,nrcvlines::[DrawLoc]
@@ -235,4 +240,3 @@ redoAction n action
     redoAction (n-1) action
 
 nrc1000 = redoAction 1000 solveNrc
--- to run 1000 = (5.11 secs, 508,649,672 bytes)

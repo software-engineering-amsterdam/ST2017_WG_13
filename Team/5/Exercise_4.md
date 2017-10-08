@@ -1,52 +1,75 @@
-# Exercise 1 #
-Total time spent 4 hours as follow:
-mostly rewriting code so I could try and understand it and then throwing that code away.
+# Exercise 4 #
+Total time spent ~3 hours.
 
 ## Specifications of problem ##
-> The goal of this exercise is to extend the Sudoku program described in the lecture of this week with functions that can also handle Sudokus of a special kind: the Sudokus that appear in the Dutch evening newspaper NRC-Handelsblad each week (designed by Peter Ritmeester, from Oct 8, 2005 onward). These NRC Sudokus are special in that they have to satisfy a few extra constraints: in addition to the usual Sudoku constraints, each of the 3×33×3 subgrids with left-top corner (2,2), (2,6), (6,2), and (6,6) should also yield a surjective function. The above figure gives an example (this is the NRC sudoku that appeared Saturday Nov 26, 2005).
+>Write a program that generates Sudoku problems with three empty blocks. Is it also possible to generate Sudoku problems with four empty blocks? Five? How can you check this?
 
-## Solution to the puzzel
-It was required to solve this problem:
+## best performance: we mangaged to get a 4 blanker:
 
-+---------+---------+---------+
-|         | 3       |         |
-|   +-----|--+   +--|-----+   |
-|   |     | 7|   |  | 3   |   |
-| 2 |     |  |   |  |     | 8 |
-+---------+---------+---------+
-|   |   6 |  |   |5 |     |   |
-|   +-----|--+   +--|-----+   |
-|    9  1 | 6       |         |
-|   +-----|--+   +--|-----+   |
-| 3 |     |  | 7 |1 | 2   |   |
-+---------+---------+---------+
-|   |     |  |   |  |    3| 1 |
-|   |8    |  | 4 |  |     |   |
-|   +-----|--+   +--|-----+   |
-|       2 |         |         |
-+---------+---------+---------+
 
-the solution is:
+     
++-------+-------+-------+
+| 4 1 3 | 6 5 7 | 2 9 8 |
+| 2 8 9 | 4 3 1 | 5 7 6 |
+| 5 6 7 | 9 8 2 | 3 4 1 |
++-------+-------+-------+
+| 8 2 5 | 3 6 9 | 7 1 4 |
+| 3 7 4 | 1 2 8 | 6 5 9 |
+| 6 9 1 | 5 7 4 | 8 2 3 |
++-------+-------+-------+
+| 9 5 6 | 7 4 3 | 1 8 2 |
+| 1 3 8 | 2 9 5 | 4 6 7 |
+| 7 4 2 | 8 1 6 | 9 3 5 |
++-------+-------+-------+
++-------+-------+-------+
+| 4     |       | 2     |
+| 2 8 9 |       |       |
+|   6   |       | 3 4 1 |
++-------+-------+-------+
+|       | 3 6   |       |
+|       |   2 8 |       |
+|       | 5 7 4 |       |
++-------+-------+-------+
+|   5   |       |   8   |
+| 1 3 8 |       | 4   7 |
+| 7 4   |       |   3 5 |
++-------+-------+-------+
 
-+----------+-----------+----------+
-| 4   7  8 | 3   9   2 | 6  1   5 |
-|   +------|---+   +---|------+   |
-| 6 | 1  9 | 7 | 5 | 8 | 3  2 | 4 |
-|   |      |   |   |   |      |   |
-| 2 | 3  5 | 4 | 1 | 6 | 9  7 | 8 |
-+---|------+---|---|---+------|---+
-| 7 | 2  6 | 8 | 3 | 5 | 1  4 | 9 |
-|   +------|---+   +---|------+   |
-| 8   9  1 | 6   2   4 | 7  5   3 |
-|   +------|---+   +---|------+   |
-| 3 | 5  4 | 9 | 7 | 1 | 2  8 | 6 |
-+---|------+---|---|---+------|---+
-| 5 | 6  7 | 2 | 8 | 9 | 4  3 | 1 |
-|   |      |   |   |   |      |   |
-| 9 | 8  3 | 1 | 4 | 7 | 5  6 | 2 |
-|   +------|---+   +---|------+   |
-| 1   4  2 | 5   6   3 | 8  9   7 |
-+----------+-----------+----------+
+## the Code
+
+````haskell
+main :: Int -> IO ()
+main cnt = do 
+  [r] <- rsolveNs [emptyN]
+  showNode r
+  r' <- eraseblocks cnt r
+  s  <- genProblem r'
+  showNode s
+
+eraseblocks::Int -> Node -> IO Node
+eraseblocks cnt node = do
+  blocks <- blockGen cnt
+  if uniqueSol (sol blocks) then return (sol blocks) else eraseblocks cnt node
+    where
+      sol blks = (eraseblocks' blks)
+      eraseblocks' =  foldl (erasecells) node
+      erasecells = foldl (eraseN)
+      
+blockGen::Int -> IO [[(Row,Column)]]
+blockGen n = liftM (map ((!!)sgs')) $ sgcntGen n
+  where 
+    sgs' = [[(r, c) | r <- rs, c <- cs] | rs <- blocks, cs <- blocks ]
+    sgcntGen n = do
+      g <- newStdGen
+      return (take n . nub $ (randomRs (0,8) g :: [Int]))
+
+````
+
+thanks to some advice from: https://puzzling.stackexchange.com/questions/309/what-is-the-maximum-number-of-empty-3x3-blocks-a-proper-sudoku-can-have
+we were able to limit the search space for a 4 blanck solution and after many runs of the following adapted code we got the following four blank squares:
+
+
+
 
 ## Timing
 
