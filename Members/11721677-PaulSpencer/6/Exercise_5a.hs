@@ -39,6 +39,7 @@ carmichaelTest runs n = test_fltPrimes runs (take n firstCarmichaels)
 slice s l = (take l . drop s)
 carmichaelTest' runs n s = test_fltPrimes runs (slice s n firstCarmichaels)
 
+--------------------------
 
 mrComposite' :: Integer -> Integer -> Bool
 mrComposite' x n = let
@@ -61,3 +62,15 @@ test_MrPrimes runs ts = test_primes primeMR' runs ts
 
 chernickMRTest runs n = test_MrPrimes  runs (take n chernick)
 carmichaelMRTest runs n = test_MrPrimes runs (take n firstCarmichaels)     
+
+---------------------------------
+printMer::Integer -> IO Integer
+printMer x = do  
+    b <- primeMR' 10 ((2^x)-1)
+    if b then putStrLn $ (show x) ++ " = (2^" ++ (show x) ++ "-1)" else putStr ""
+    return (if b then 1 else 0)
+
+test_mersprimes::[Integer] -> IO String
+test_mersprimes ts =  return ("total " ++) <*> (return show <*> (mp ts))
+    where 
+        mp = foldr (\x b -> pure (+) <*> (printMer x) <*> b) (return (0))    
