@@ -1,10 +1,7 @@
-module Exercise_3
+module Exercise_3 where
 
-where 
+prime:: Integer -> Bool
+prime x = null $ filter (\y ->  x `mod` y == 0) $ takeWhile (\y ->  y*y <= x) [2..]
 
-import Data.List
-import System.Random
-import Lecture6
-
-composites' :: [Integer]
-composites' = filter (not . prime) [3..]
+composites:: [Integer]
+composites = [x | x <- [2..], not $ prime x]
