@@ -27,7 +27,7 @@ chernick = [ (6*k+1)*(12*k+1)*(18*k+1) |
       prime (18*k+1) ]
 ````
 
-next, using `reportPrimeResult` and `primesTest` from Exercise 4, we created a test that showed that Fermat's little theorem almost always wrongly classifies these non primes as prime: 
+Next, using `reportPrimeResult` and `primesTest` from Exercise 4 (in the members - paul folder), we created a test that showed that Fermat's little theorem almost always wrongly classifies these non primes as prime: 
 
 ```` haskell
 chernickTest runs cnt = primesTest (reportPrimeResult runs) (take cnt chernick)

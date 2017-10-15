@@ -1,4 +1,8 @@
 module Exercise_5 where
+{-
+    Explanation of code can be found at:
+    https://github.com/software-engineering-amsterdam/ST2017_WG_13/blob/master/Team/6/Exercise_5.md
+-}
 
 import Lecture6_Refactored (primeTestsF, prime)
 import Exercise_3 (composites)

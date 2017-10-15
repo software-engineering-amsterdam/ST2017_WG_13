@@ -2,6 +2,11 @@ module Exercise_6 where
 import Lecture6_Refactored (primeMR, prime)
 import Exercise_5 (chernick, primesTest)
 
+{-
+    Explanation of code can be found at:
+    https://github.com/software-engineering-amsterdam/ST2017_WG_13/blob/master/Team/6/Exercise_6.md
+-}
+
 reportMRPrimeResult::Int -> Integer -> IO Int
 reportMRPrimeResult c x = do  
     b <- primeMR c x
