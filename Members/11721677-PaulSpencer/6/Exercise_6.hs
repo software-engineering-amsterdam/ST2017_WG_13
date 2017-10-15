@@ -1,8 +1,6 @@
 module Exercise_6 where
 import Lecture6_Refactored (primeMR, prime)
-import Exercise_4 (primesTest, reportPrimeResult)
-import Exercise_5 (chernick)
--- import Exercise_5_TestData
+import Exercise_5 (chernick, primesTest)
 
 reportMRPrimeResult::Int -> Integer -> IO Int
 reportMRPrimeResult c x = do  
@@ -23,4 +21,4 @@ printMer x = do
 test_mersprimes::[Integer] -> IO String
 test_mersprimes ts =  return ("total " ++) <*> (return show <*> (mp ts))
     where 
-        mp = foldr (\x b -> pure (+) <*> (printMer x) <*> b) (return (0))    
+        mp = foldr (\x b -> pure (+) <*> (printMer x) <*> b) (return (0))       
