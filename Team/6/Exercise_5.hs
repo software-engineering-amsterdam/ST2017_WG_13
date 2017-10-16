@@ -5,7 +5,6 @@ module Exercise_5 where
 -}
 
 import Lecture6_Refactored (primeTestsF, prime)
-import Exercise_3 (composites)
 import Exercise_5_TestData
 
 ---- primes test (from exercise 4)
